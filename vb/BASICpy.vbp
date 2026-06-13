@@ -1,7 +1,12 @@
 Type=OleDll
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\WINDOWS\system32\stdole2.tlb#OLE Automation
+Class=IPredicate; IPredicate.cls
 Class=time; time.cls
+Class=Builtin; Builtin.cls
+Class=IsTruthy; IsTruthy.cls
+Class=Ensure; Ensure.cls
+Module=ErrorCodes; ErrorCodes.bas
 Module=naive_time_mod; ..\datetime\naive_time_mod.bas
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\system32\stdole2.tlb#OLE Automation
 Startup="(None)"
 HelpFile=""
 Title="BASICpy"
@@ -32,3 +37,6 @@ ThreadPerObject=0
 MaxNumberOfThreads=1
 ThreadingModel=1
 DebugStartupOption=0
+
+[MS Transaction Server]
+AutoRefresh=1

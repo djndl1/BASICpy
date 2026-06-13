@@ -108,3 +108,7 @@ Temporary Items
 #
 *.vbw
 build
+tags
+TAGS
+tags.lock
+tags.temp
