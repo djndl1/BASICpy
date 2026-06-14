@@ -19,11 +19,11 @@ Public Function PyAll(ByRef arr As Variant, Optional ByVal predicate As Variant)
     End If
 
     If IsArray(arr) Then
-        PyAll = IterateArray(arr, predicate, True, True)
+        PyAll = PyAllArray(arr, predicate)
     ElseIf TypeName(arr) = "Collection" Then
-        PyAll = IterateCollection(arr, predicate, True, True)
+        PyAll = PyAllCollection(arr, predicate)
     ElseIf IsObject(arr) And IsIEnumVARAINT(arr) Then
-        PyAll = IterateIEnumVariant(arr, predicate, True, True)
+        PyAll = PyAllIEnumVariant(arr, predicate)
     Else
         Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
             "Builtin.PyAll", "argument is neither an array nor a Collection nor an enumerable object"
@@ -36,73 +36,96 @@ Public Function PyAny(ByRef arr As Variant, Optional ByVal predicate As Variant)
     End If
 
     If IsArray(arr) Then
-        PyAny = IterateArray(arr, predicate, False, False)
+        PyAny = PyAnyArray(arr, predicate)
     ElseIf TypeName(arr) = "Collection" Then
-        PyAny = IterateCollection(arr, predicate, False, False)
+        PyAny = PyAnyCollection(arr, predicate)
     ElseIf IsObject(arr) And IsIEnumVARAINT(arr) Then
-        PyAny = IterateIEnumVariant(arr, predicate, False, False)
+        PyAny = PyAnyIEnumVariant(arr, predicate)
     Else
         Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
             "Builtin.PyAny", "argument is neither an array nor a Collection nor an enumerable object"
     End If
 End Function
 
-Private Function IterateArray(ByRef arr As Variant, _
-                             ByVal predicate As IPredicate, _
-                             ByVal modeIsAll As Boolean, _
-                             ByVal emptyDefault As Boolean) As Boolean
-    Dim i As Long
-    If LBound(arr) > UBound(arr) Then
-        IterateArray = emptyDefault
-        Exit Function
-    End If
-    For i = LBound(arr) To UBound(arr)
-        If ReduceStep(predicate.Test(arr(i)), modeIsAll, emptyDefault, IterateArray) Then Exit Function
-    Next i
-    IterateArray = emptyDefault
-End Function
-
-Private Function IterateCollection(ByVal col As Collection, _
-                                  ByVal predicate As IPredicate, _
-                                  ByVal modeIsAll As Boolean, _
-                                  ByVal emptyDefault As Boolean) As Boolean
-    Dim i As Long
-    If col.Count = 0 Then
-        IterateCollection = emptyDefault
-        Exit Function
-    End If
-    For i = 1 To col.Count
-        If ReduceStep(predicate.Test(col(i)), modeIsAll, emptyDefault, IterateCollection) Then Exit Function
-    Next i
-    IterateCollection = emptyDefault
-End Function
-
-Private Function IterateIEnumVariant(ByVal obj As Object, _
-                                     ByVal predicate As IPredicate, _
-                                     ByVal modeIsAll As Boolean, _
-                                     ByVal emptyDefault As Boolean) As Boolean
-    Dim element As Variant
-    For Each element In obj
-        If ReduceStep(predicate.Test(element), modeIsAll, emptyDefault, IterateIEnumVariant) Then Exit Function
-    Next element
-    IterateIEnumVariant = emptyDefault
-End Function
-
-Private Function ReduceStep(ByVal passes As Boolean, _
-                            ByVal modeIsAll As Boolean, _
-                            ByVal emptyDefault As Boolean, _
-                            ByRef outResult As Boolean) As Boolean
-    If modeIsAll Then
-        If Not passes Then
-            outResult = False
-            ReduceStep = True
+Public Function PyAbs(ByVal value As Variant) As Variant
+    If IsObject(value) Then
+        If TypeOf value Is IAbsolute Then
+            Dim absImpl As IAbsolute
+            Set absImpl = value
+            PyAbs = absImpl.Absolute()
+        Else
+            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
+                "Builtin.PyAbs", "object does not implement IAbsolute"
         End If
     Else
-        If passes Then
-            outResult = True
-            ReduceStep = True
-        End If
+        PyAbs = Abs(value)
     End If
+End Function
+
+Private Function PyAllArray(ByRef arr As Variant, ByVal predicate As IPredicate) As Boolean
+    Dim i As Long
+    For i = LBound(arr) To UBound(arr)
+        If Not predicate.Test(arr(i)) Then
+            PyAllArray = False
+            Exit Function
+        End If
+    Next i
+    PyAllArray = True
+End Function
+
+Private Function PyAllCollection(ByVal col As Collection, ByVal predicate As IPredicate) As Boolean
+    Dim i As Long
+    For i = 1 To col.Count
+        If Not predicate.Test(col(i)) Then
+            PyAllCollection = False
+            Exit Function
+        End If
+    Next i
+    PyAllCollection = True
+End Function
+
+Private Function PyAllIEnumVariant(ByVal obj As Object, ByVal predicate As IPredicate) As Boolean
+    Dim element As Variant
+    For Each element In obj
+        If Not predicate.Test(element) Then
+            PyAllIEnumVariant = False
+            Exit Function
+        End If
+    Next element
+    PyAllIEnumVariant = True
+End Function
+
+Private Function PyAnyArray(ByRef arr As Variant, ByVal predicate As IPredicate) As Boolean
+    Dim i As Long
+    For i = LBound(arr) To UBound(arr)
+        If predicate.Test(arr(i)) Then
+            PyAnyArray = True
+            Exit Function
+        End If
+    Next i
+    PyAnyArray = False
+End Function
+
+Private Function PyAnyCollection(ByVal col As Collection, ByVal predicate As IPredicate) As Boolean
+    Dim i As Long
+    For i = 1 To col.Count
+        If predicate.Test(col(i)) Then
+            PyAnyCollection = True
+            Exit Function
+        End If
+    Next i
+    PyAnyCollection = False
+End Function
+
+Private Function PyAnyIEnumVariant(ByVal obj As Object, ByVal predicate As IPredicate) As Boolean
+    Dim element As Variant
+    For Each element In obj
+        If predicate.Test(element) Then
+            PyAnyIEnumVariant = True
+            Exit Function
+        End If
+    Next element
+    PyAnyIEnumVariant = False
 End Function
 
 Private Function IsIEnumVARAINT(ByVal obj As Object) As Boolean

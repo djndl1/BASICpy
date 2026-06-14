@@ -5,6 +5,7 @@ Class=time; time.cls
 Class=Builtin; Builtin.cls
 Class=IsTruthy; IsTruthy.cls
 Class=Ensure; Ensure.cls
+Class=IAbsolute; IAbsolute.cls
 Module=ErrorCodes; ErrorCodes.bas
 Module=naive_time_mod; ..\datetime\naive_time_mod.bas
 Startup="(None)"
