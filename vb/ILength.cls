@@ -6,13 +6,12 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "IPredicate"
+Attribute VB_Name = "ILength"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-
 Option Explicit
 
-Public Function Test(ByVal value As Variant) As Boolean
+Public Function Length() As Long
 End Function
