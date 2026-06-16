@@ -8,6 +8,7 @@ Class=Ensure; Ensure.cls
 Class=IAbsolute; IAbsolute.cls
 Class=IIndex; IIndex.cls
 Class=ILength; ILength.cls
+Class=PyMath; PyMath.cls
 Module=ErrorCodes; ErrorCodes.bas
 Module=naive_time_mod; ..\datetime\naive_time_mod.bas
 Startup="(None)"
