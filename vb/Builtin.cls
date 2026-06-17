@@ -203,6 +203,81 @@ Attribute PyLen.VB_Description = "Returns the length of a value, dispatching acr
     End If
 End Function
 
+' Return an iterator for the given object.
+' Single-arg form:  iter(iterable)       — IIterable first, then fallbacks
+' Two-arg form:     iter(callable, sentinel) — ISupplier + sentinel
+Public Function PyIter(ByVal value As Variant, Optional ByVal sentinel As Variant) As IIterator
+    If IsMissing(sentinel) Then
+        ' --- Single-arg form ---
+        ' Fast path: explicit IIterable protocol
+        If IsObject(value) Then
+            If TypeOf value Is IIterable Then
+                Dim iterable As IIterable
+                Set iterable = value
+                Set PyIter = iterable.Iter()
+                Exit Function
+            End If
+        End If
+        
+        ' Fallback: try arrays, ISequence, IEnumVARIANT, etc.
+        Dim fallback As IIterator
+        Set fallback = TryCreateFallbackIterator(value)
+        If Not (fallback Is Nothing) Then
+            Set PyIter = fallback
+        Else
+            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
+                "Builtin.PyIter", "argument is not iterable"
+        End If
+    Else
+        ' Two-arg form: callable + sentinel
+        If IsObject(value) Then
+            If TypeOf value Is ISupplier Then
+                Dim supplier As ISupplier
+                Set supplier = value
+                Dim supplierIter As SupplierIterator
+                Set supplierIter = New SupplierIterator
+                supplierIter.Init supplier, sentinel
+                Set PyIter = supplierIter
+            Else
+                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
+                    "Builtin.PyIter", "object does not implement ISupplier"
+            End If
+        Else
+            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
+                "Builtin.PyIter", "argument is not a callable (ISupplier required)"
+        End If
+    End If
+End Function
+
+' Tries to create an IIterator from non-IIterable types using fallback mechanisms.
+' Returns Nothing if no fallback applies to the given value.
+Private Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
+    ' 1. Native VB6 arrays
+    If IsArray(value) Then
+        Dim arrIter As ArrayIterator
+        Set arrIter = New ArrayIterator
+        arrIter.Init value
+        Set TryCreateFallbackIterator = arrIter
+        Exit Function
+    End If
+    
+    ' 2. ISequence protocol (indexable sequence)
+    If IsObject(value) Then
+        If TypeOf value Is ISequence Then
+            Dim seq As ISequence
+            Set seq = value
+            Dim seqIter As SequenceIterator
+            Set seqIter = New SequenceIterator
+            seqIter.Init seq
+            Set TryCreateFallbackIterator = seqIter
+            Exit Function
+        End If
+    End If
+    
+    ' No fallback available
+    Set TryCreateFallbackIterator = Nothing
+End Function
+
 ' Dispatches to Count/Length/RecordCount based on TypeName(value).
 ' Matches COM classes by their runtime class name string, avoiding the need for
 ' a compile-time reference to their type library. Extend by adding Case labels.
