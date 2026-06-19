@@ -51,38 +51,52 @@ Private Sub Class_Initialize()
     m_binDigits(1) = "1"
 End Sub
 
-Public Function PyAll(ByRef arr As Variant, Optional ByVal predicate As IPredicate) As Boolean
+Public Function PyAll(ByRef value As Variant, Optional ByVal predicate As IPredicate) As Boolean
     If predicate Is Nothing Then
         Set predicate = IsTruthy
     End If
 
-    If IsArray(arr) Then
-        PyAll = PyAllArray(arr, predicate)
-    ElseIf TypeOf arr Is Collection Then
-        PyAll = PyAllCollection(arr, predicate)
-    ElseIf IsObject(arr) And IsIEnumVARAINT(arr) Then
-        PyAll = PyAllIEnumVariant(arr, predicate)
-    Else
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyAll", "argument is neither an array nor a Collection nor an enumerable object"
-    End If
+    Dim iter As IIterator
+    Set iter = PyIter(value)
+    PyAll = PyAllFromIter(iter, predicate)
 End Function
 
-Public Function PyAny(ByRef arr As Variant, Optional ByVal predicate As IPredicate) As Boolean
+Public Function PyAny(ByRef value As Variant, Optional ByVal predicate As IPredicate) As Boolean
     If predicate Is Nothing Then
         Set predicate = IsTruthy
     End If
 
-    If IsArray(arr) Then
-        PyAny = PyAnyArray(arr, predicate)
-    ElseIf TypeName(arr) = "Collection" Then
-        PyAny = PyAnyCollection(arr, predicate)
-    ElseIf IsObject(arr) And IsIEnumVARAINT(arr) Then
-        PyAny = PyAnyIEnumVariant(arr, predicate)
-    Else
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyAny", "argument is neither an array nor a Collection nor an enumerable object"
-    End If
+    Dim iter As IIterator
+    Set iter = PyIter(value)
+    PyAny = PyAnyFromIter(iter, predicate)
+End Function
+
+' Iterates through an IIterator, checking all elements pass the predicate.
+Private Function PyAllFromIter(ByVal iterator As IIterator, ByVal predicate As IPredicate) As Boolean
+    Dim item As Variant
+    item = iterator.NextItem()
+    Do While Not IsError(item)
+        If Not predicate.Test(item) Then
+            PyAllFromIter = False
+            Exit Function
+        End If
+        item = iterator.NextItem()
+    Loop
+    PyAllFromIter = True
+End Function
+
+' Iterates through an IIterator, checking if any element passes the predicate.
+Private Function PyAnyFromIter(ByVal iterator As IIterator, ByVal predicate As IPredicate) As Boolean
+    Dim item As Variant
+    item = iterator.NextItem()
+    Do While Not IsError(item)
+        If predicate.Test(item) Then
+            PyAnyFromIter = True
+            Exit Function
+        End If
+        item = iterator.NextItem()
+    Loop
+    PyAnyFromIter = False
 End Function
 
 Public Function PyAbs(ByVal value As Variant) As Variant
@@ -176,28 +190,52 @@ End Function
 '     a Count/Length property.
 ' Returns:
 '   Long: The number of elements or characters in the value.
-Public Function PyLen(ByVal value As Variant) As Long
-Attribute PyLen.VB_Description = "Returns the length of a value, dispatching across VB6 types.\r\nArrays use UBound-LBound+1, strings use Len(s), objects dispatch through ILength (interface protocol), TypeOf (intrinsic controls), TypeName (COM class names), or a dynamic Count/Length fallback. Non-len-able types raise an error.\r\nArgs:\r\n  value (Variant): The value whose length to return. Can be an array, string, object implementing ILength, VB6 intrinsic control (ListBox, Form, etc.), COM collection (Dictionary, ArrayList, etc.), or any COM object with a Count/Length property.\r\nReturns:\r\n  Long: The number of elements or characters in the value."
+Private Function PyLenImpl(ByRef value As Variant) As Long
+    ' Arrays — local OERN for undimensioned check (rare path, cold cost)
     If IsArray(value) Then
-        PyLen = UBound(value) - LBound(value) + 1
-    ElseIf VarType(value) = vbString Then
-        PyLen = Len(value)
-    ElseIf IsObject(value) Then
-        ' TypeOf checks for built-in types and ILength implementations.
-        ' Unrecognized objects fall through to PyLenByName, which uses TypeName
-        ' dispatch for COM types without a compile-time reference.
+        On Error Resume Next
+        PyLenImpl = UBound(value) - LBound(value) + 1
+        If Err.Number <> 0 Then PyLenImpl = -1
+        On Error GoTo 0
+        Exit Function
+    End If
+
+    ' Strings — Len never fails
+    If VarType(value) = vbString Then
+        PyLenImpl = Len(value)
+        Exit Function
+    End If
+
+    ' Objects
+    If IsObject(value) Then
+        ' Nothing → no length, return -1 (caller raises error)
+        If value Is Nothing Then
+            PyLenImpl = -1
+            Exit Function
+        End If
         If TypeOf value Is ILength Then
             Dim lenImpl As ILength
             Set lenImpl = value
-            PyLen = lenImpl.Length()
+            PyLenImpl = lenImpl.Length()
+            Exit Function
         Else
             Dim matched As Boolean
-            PyLen = PyLenByTypeOf(value, matched)
+            PyLenImpl = PyLenByTypeOf(value, matched)
             If Not matched Then
-                PyLen = PyLenByName(value)
+                PyLenImpl = PyLenByName(value)    ' returns -1 on failure, no raise
             End If
+            Exit Function
         End If
-    Else
+    End If
+
+    ' Non-lengthable type
+    PyLenImpl = -1
+End Function
+
+Public Function PyLen(ByRef value As Variant) As Long
+Attribute PyLen.VB_Description = "Returns the length of a value, dispatching across VB6 types.\r\nArrays use UBound-LBound+1, strings use Len(s), objects dispatch through ILength (interface protocol), TypeOf (intrinsic controls), TypeName (COM class names), or a dynamic Count/Length fallback. Non-len-able types raise an error.\r\nArgs:\r\n  value (Variant): The value whose length to return. Can be an array, string, object implementing ILength, VB6 intrinsic control (ListBox, Form, etc.), COM collection (Dictionary, ArrayList, etc.), or any COM object with a Count/Length property.\r\nReturns:\r\n  Long: The number of elements or characters in the value."
+    PyLen = PyLenImpl(value)
+    If PyLen = -1 Then
         Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
             "Builtin.PyLen", "argument has no len()"
     End If
@@ -206,7 +244,16 @@ End Function
 ' Return an iterator for the given object.
 ' Single-arg form:  iter(iterable)       — IIterable first, then fallbacks
 ' Two-arg form:     iter(callable, sentinel) — ISupplier + sentinel
-Public Function PyIter(ByVal value As Variant, Optional ByVal sentinel As Variant) As IIterator
+Public Function PyIter(ByRef value As Variant, Optional ByVal sentinel As Variant) As IIterator
+    ' 0. Nothing → not iterable
+    If IsObject(value) Then
+        If value Is Nothing Then
+            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
+                "Builtin.PyIter", "'Nothing' object is not iterable"
+            Exit Function
+        End If
+    End If
+    
     If IsMissing(sentinel) Then
         ' --- Single-arg form ---
         ' Fast path: explicit IIterable protocol
@@ -218,7 +265,7 @@ Public Function PyIter(ByVal value As Variant, Optional ByVal sentinel As Varian
                 Exit Function
             End If
         End If
-        
+
         ' Fallback: try arrays, ISequence, IEnumVARIANT, etc.
         Dim fallback As IIterator
         Set fallback = TryCreateFallbackIterator(value)
@@ -249,6 +296,142 @@ Public Function PyIter(ByVal value As Variant, Optional ByVal sentinel As Varian
     End If
 End Function
 
+' Returns the next item from an iterator, matching Python's next(it) / next(it, default).
+' One-arg form raises StopIteration on exhaustion; two-arg form returns default.
+' Equivalent Python:
+'   next(it)           → StopIteration raised
+'   next(it, default)  → default returned
+Public Function PyNext(ByRef iter As IIterator, Optional ByVal default As Variant) As Variant
+    Dim item As Variant
+    item = iter.NextItem()
+    If IsError(item) Then
+        If IsMissing(default) Then
+            Err.Raise StopIterationCode.StopIteration, "Builtin.PyNext", _
+                "iterator exhausted — no more items"
+        Else
+            PyNext = default
+        End If
+    Else
+        PyNext = item
+    End If
+End Function
+
+' Safe iteration helper that avoids the prime-then-loop pattern.
+' Calls iter.NextItem() and returns:
+'   True  → item contains the next value (use it inside the loop)
+'   False → iterator is exhausted (item is undefined)
+' Typical usage:
+'   Dim item As Variant
+'   Do While Builtin.PyTryNext(iter, item)
+'       ' process item
+'   Loop
+Public Function PyTryNext(ByRef iter As IIterator, ByRef item As Variant) As Boolean
+    Dim nextVal As Variant
+    nextVal = iter.NextItem()
+    If IsError(nextVal) Then
+        PyTryNext = False
+    Else
+        PyTryNext = True
+        item = nextVal
+    End If
+End Function
+
+' Returns the truth value of a value, matching Python's bool() truth testing.
+' https://docs.python.org/3/library/stdtypes.html#truth-value-testing
+' Dispatch: primitives > PyLen > IBoolean (__bool__) > ILength (__len__) > True
+Public Function PyBool(Optional ByRef value As Variant) As Boolean
+    ' 0. Nothing → False (Python: bool(None) → False)
+    If IsObject(value) Then
+        If value Is Nothing Then
+            PyBool = False
+            Exit Function
+        End If
+    End If
+    
+    ' 1. No argument (missing), Empty, or Null → False
+    ' IsMissing throws on undimensioned arrays (NULL SAFEARRAY), so we guard it.
+    ' VB6 has no short-circuit Or, so we must check IsMissing in isolation.
+    If Not IsArray(value) Then
+        If IsMissing(value) Then
+            PyBool = False
+            Exit Function
+        End If
+    End If
+    
+    ' Empty or Null → False (safe on any Variant type)
+    If IsEmpty(value) Or IsNull(value) Then
+        PyBool = False
+        Exit Function
+    End If
+
+    ' 2. Boolean → value itself
+    If VarType(value) = vbBoolean Then
+        PyBool = value
+        Exit Function
+    End If
+
+    ' 3. Numeric types → non-zero is truthy
+    Select Case VarType(value)
+        Case vbByte, vbInteger, vbLong, vbSingle, vbDouble, vbCurrency, vbDecimal
+            PyBool = (value <> 0)
+            Exit Function
+        Case vbDate
+            PyBool = (CDbl(value) <> 0)
+            Exit Function
+    End Select
+
+    ' 4. Use PyLenImpl for anything length-detectable
+    ' Catches strings, arrays, Collections, ILength, Dictionary, etc.
+    ' Returns -1 on failure, no On Error overhead.
+    Dim length As Long
+    length = PyLenImpl(value)
+    If length <> -1 Then
+        PyBool = (length > 0)
+        Exit Function
+    End If
+
+    ' If PyLenImpl failed but value IS an array → undimensioned/empty → False
+    If IsArray(value) Then
+        PyBool = False
+        Exit Function
+    End If
+
+    ' 5. Object — protocol dispatch
+    If IsObject(value) Then
+        ' Nothing → False
+        If value Is Nothing Then
+            PyBool = False
+            Exit Function
+        End If
+
+        ' __bool__ protocol (IBoolean)
+        If TypeOf value Is IBoolean Then
+            Dim boolObj As IBoolean
+            Set boolObj = value
+            PyBool = boolObj.Bool()
+            Exit Function
+        End If
+
+        ' __len__ protocol (ILength)
+        If TypeOf value Is ILength Then
+            Dim lenObj As ILength
+            Set lenObj = value
+            PyBool = (lenObj.Length() > 0)
+            Exit Function
+        End If
+
+        ' Default: objects are truthy
+        PyBool = True
+        Exit Function
+    End If
+
+    ' 7. Fallback — try CBool, default True
+    On Error Resume Next
+    PyBool = CBool(value)
+    If Err.Number <> 0 Then PyBool = True
+    On Error GoTo 0
+End Function
+
 ' Tries to create an IIterator from non-IIterable types using fallback mechanisms.
 ' Returns Nothing if no fallback applies to the given value.
 Private Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
@@ -258,6 +441,15 @@ Private Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
         Set arrIter = New ArrayIterator
         arrIter.Init value
         Set TryCreateFallbackIterator = arrIter
+        Exit Function
+    End If
+    
+    ' 1b. Strings → character iterator
+    If VarType(value) = vbString Then
+        Dim strIter As StringIterator
+        Set strIter = New StringIterator
+        strIter.Init value
+        Set TryCreateFallbackIterator = strIter
         Exit Function
     End If
     
@@ -272,20 +464,20 @@ Private Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
             Set TryCreateFallbackIterator = seqIter
             Exit Function
         End If
-        
+
         ' 3. COM enumerable objects (Collection, Dictionary, etc.)
         '    via IEnumVARIANT (For Each / _NewEnum)
-        If IsIEnumVARAINT(value) Then
-            Dim enumIter As EnumVARIANTIterator
-            Set enumIter = New EnumVARIANTIterator
-            Dim objEnum As Object
-            Set objEnum = value
-            enumIter.Init objEnum
+        Dim enumOut As IUnknown
+        Dim dispObj As Object: Set dispObj = value
+        Dim enumHr As Long: enumHr = DispCall.TryGetEnum(dispObj, enumOut)
+        If enumHr = 0 And Not (enumOut Is Nothing) Then
+            Dim enumIter As EnumVARIANTIterator: Set enumIter = New EnumVARIANTIterator
+            enumIter.InitFromEnumerator enumOut
             Set TryCreateFallbackIterator = enumIter
             Exit Function
         End If
     End If
-    
+
     ' No fallback available
     Set TryCreateFallbackIterator = Nothing
 End Function
@@ -300,7 +492,7 @@ End Function
 Private Function PyLenByName(ByVal value As Variant) As Long
     Select Case TypeName(value)
         Case "Dictionary", "ICollection", "ArrayList", "BitArray", "Hashtable", "SortedList", "Stack", "Queue"
-            PyLenByName = value.Count
+            PyLenByName = value.count
         Case "CSlice"
             PyLenByName = value.Length
         Case "Recordset"
@@ -308,7 +500,7 @@ Private Function PyLenByName(ByVal value As Variant) As Long
         Case Else
             ' Dynamic fallback: try Count and Length via IDispatch late binding.
             On Error Resume Next
-            PyLenByName = value.Count
+            PyLenByName = value.count
             If Err.Number = 0 Then
                 On Error GoTo 0
                 Exit Function
@@ -320,8 +512,7 @@ Private Function PyLenByName(ByVal value As Variant) As Long
                 Exit Function
             End If
             On Error GoTo 0
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.PyLen", "argument has no len()"
+            PyLenByName = -1    ' No length found — signal failure
     End Select
 End Function
 
@@ -337,7 +528,7 @@ End Function
 Private Function PyLenByTypeOf(ByVal value As Variant, ByRef matched As Boolean) As Long
     matched = True
     If TypeOf value Is Collection Then
-        PyLenByTypeOf = value.Count
+        PyLenByTypeOf = value.count
     ElseIf TypeOf value Is ListBox Then
         PyLenByTypeOf = value.ListCount
     ElseIf TypeOf value Is ComboBox Then
@@ -347,81 +538,15 @@ Private Function PyLenByTypeOf(ByVal value As Variant, ByRef matched As Boolean)
     ElseIf TypeOf value Is FileListBox Then
         PyLenByTypeOf = value.ListCount
     ElseIf TypeOf value Is Form Then
-        PyLenByTypeOf = value.Count
+        PyLenByTypeOf = value.count
     ElseIf TypeOf value Is MDIForm Then
-        PyLenByTypeOf = value.Count
+        PyLenByTypeOf = value.count
     ElseIf TypeOf value Is PropertyPage Then
-        PyLenByTypeOf = value.Count
+        PyLenByTypeOf = value.count
     Else
         matched = False
         PyLenByTypeOf = 0
     End If
-End Function
-
-Private Function PyAllArray(ByRef arr As Variant, ByVal predicate As IPredicate) As Boolean
-    Dim i As Long
-    For i = LBound(arr) To UBound(arr)
-        If Not predicate.Test(arr(i)) Then
-            PyAllArray = False
-            Exit Function
-        End If
-    Next i
-    PyAllArray = True
-End Function
-
-Private Function PyAllCollection(ByVal col As Collection, ByVal predicate As IPredicate) As Boolean
-    Dim i As Long
-    For i = 1 To col.Count
-        If Not predicate.Test(col(i)) Then
-            PyAllCollection = False
-            Exit Function
-        End If
-    Next i
-    PyAllCollection = True
-End Function
-
-Private Function PyAllIEnumVariant(ByVal obj As Object, ByVal predicate As IPredicate) As Boolean
-    Dim element As Variant
-    For Each element In obj
-        If Not predicate.Test(element) Then
-            PyAllIEnumVariant = False
-            Exit Function
-        End If
-    Next element
-    PyAllIEnumVariant = True
-End Function
-
-Private Function PyAnyArray(ByRef arr As Variant, ByVal predicate As IPredicate) As Boolean
-    Dim i As Long
-    For i = LBound(arr) To UBound(arr)
-        If predicate.Test(arr(i)) Then
-            PyAnyArray = True
-            Exit Function
-        End If
-    Next i
-    PyAnyArray = False
-End Function
-
-Private Function PyAnyCollection(ByVal col As Collection, ByVal predicate As IPredicate) As Boolean
-    Dim i As Long
-    For i = 1 To col.Count
-        If predicate.Test(col(i)) Then
-            PyAnyCollection = True
-            Exit Function
-        End If
-    Next i
-    PyAnyCollection = False
-End Function
-
-Private Function PyAnyIEnumVariant(ByVal obj As Object, ByVal predicate As IPredicate) As Boolean
-    Dim element As Variant
-    For Each element In obj
-        If predicate.Test(element) Then
-            PyAnyIEnumVariant = True
-            Exit Function
-        End If
-    Next element
-    PyAnyIEnumVariant = False
 End Function
 
 Private Function LongToBinStr(ByVal raw As Long) As String
@@ -532,17 +657,14 @@ Private Function PosToHexStr(ByVal val As Long) As String
     End If
 End Function
 
-Private Function IsIEnumVARAINT(ByVal obj As Object) As Boolean
-    On Error Resume Next
-    Dim dummy As Variant
-    For Each dummy In obj
-        IsIEnumVARAINT = True
-        Exit For
-    Next dummy
+Private Function IsEnumerable(ByVal obj As Object) As Boolean
+    Dim dispObj As Object: Set dispObj = obj
+    Dim enumOut As IUnknown
+    Dim callHr As Long: callHr = DispCall.TryGetEnum(dispObj, enumOut)
     If Err.Number = 0 Then
-        IsIEnumVARAINT = True
+        IsEnumerable = True
     Else
-        IsIEnumVARAINT = False
+        IsEnumerable = False
     End If
-    On Error GoTo 0
+    Set enumOut = Nothing
 End Function

@@ -7,8 +7,8 @@ BEGIN
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
 Attribute VB_Name = "IsTruthy"
-Attribute VB_GlobalNameSpace = True
-Attribute VB_Creatable = False
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Option Explicit
@@ -16,5 +16,5 @@ Option Explicit
 Implements IPredicate
 
 Private Function IPredicate_Test(ByVal value As Variant) As Boolean
-    IPredicate_Test = CBool(value)
+    IPredicate_Test = Builtin.PyBool(value)
 End Function
