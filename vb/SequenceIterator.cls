@@ -31,12 +31,15 @@ End Sub
 Private Function IIterator_NextItem() As Variant
     If m_exhausted Then
         IIterator_NextItem = CVErr(StopIterationCode.StopIteration)
-    ElseIf m_index >= m_sequence.Length() - 1 Then
-        m_index = m_index + 1
-        IIterator_NextItem = m_sequence.GetItem(m_index)
+        Exit Function
+    End If
+    
+    m_index = m_index + 1
+    
+    If m_index >= m_sequence.Length() Then
         m_exhausted = True
+        IIterator_NextItem = CVErr(StopIterationCode.StopIteration)
     Else
-        m_index = m_index + 1
         IIterator_NextItem = m_sequence.GetItem(m_index)
     End If
 End Function
