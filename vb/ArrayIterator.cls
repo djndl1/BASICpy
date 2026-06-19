@@ -27,7 +27,7 @@ Private m_exhausted As Boolean  ' True after last element returned
 Public Sub Init(ByRef arr As Variant)
     Ensure.IsTrue IsArray(arr), CommonHResults.TypeMismatch, _
         "ArrayIterator.Init", "arr must be an array"
-    
+
     m_lBound = LBound(arr)
     m_index = m_lBound - 1
     m_data = arr
@@ -37,13 +37,14 @@ End Sub
 Private Function IIterator_NextItem() As Variant
     If m_exhausted Then
         IIterator_NextItem = CVErr(StopIterationCode.StopIteration)
-    ElseIf m_index >= UBound(m_data) Then
-        m_index = m_index + 1
-        IIterator_NextItem = m_data(m_index)
+        Exit Function
+    End If
+
+    m_index = m_index + 1
+    IIterator_NextItem = m_data(m_index)
+
+    If m_index = UBound(m_data) Then
         m_exhausted = True
-    Else
-        m_index = m_index + 1
-        IIterator_NextItem = m_data(m_index)
     End If
 End Function
 

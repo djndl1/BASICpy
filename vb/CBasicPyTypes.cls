@@ -16,5 +16,5 @@ Option Explicit
 ' StopIteration error codes — exhaustion sentinel for IIterator protocol
 ' Return CVErr(StopIteration) from IIterator_NextItem() to signal end of iteration
 Public Enum StopIterationCode
-    StopIteration = vbObjectError + 512
+    StopIteration = 512
 End Enum

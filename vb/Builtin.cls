@@ -105,7 +105,7 @@ Public Function PyBin(ByVal value As Variant) As String
         If TypeOf value Is IIndex Then
             Dim indexImpl As IIndex
             Set indexImpl = value
-            PyBin = PyBin(indexImpl.Index())
+            PyBin = PyBin(indexImpl.index())
         Else
             Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
                 "Builtin.PyBin", "object does not implement IIndex"
@@ -127,7 +127,7 @@ Attribute PyOct.VB_Description = "Convert an integer to an octal string, prefixe
         If TypeOf value Is IIndex Then
             Dim indexImpl As IIndex
             Set indexImpl = value
-            PyOct = PyOct(indexImpl.Index())
+            PyOct = PyOct(indexImpl.index())
         Else
             Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
                 "Builtin.PyOct", "object does not implement IIndex"
@@ -149,7 +149,7 @@ Attribute PyHex.VB_Description = "Convert an integer to a lowercase hexadecimal 
         If TypeOf value Is IIndex Then
             Dim indexImpl As IIndex
             Set indexImpl = value
-            PyHex = PyHex(indexImpl.Index())
+            PyHex = PyHex(indexImpl.index())
         Else
             Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
                 "Builtin.PyHex", "object does not implement IIndex"
@@ -270,6 +270,18 @@ Private Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
             Set seqIter = New SequenceIterator
             seqIter.Init seq
             Set TryCreateFallbackIterator = seqIter
+            Exit Function
+        End If
+        
+        ' 3. COM enumerable objects (Collection, Dictionary, etc.)
+        '    via IEnumVARIANT (For Each / _NewEnum)
+        If IsIEnumVARAINT(value) Then
+            Dim enumIter As EnumVARIANTIterator
+            Set enumIter = New EnumVARIANTIterator
+            Dim objEnum As Object
+            Set objEnum = value
+            enumIter.Init objEnum
+            Set TryCreateFallbackIterator = enumIter
             Exit Function
         End If
     End If
@@ -522,12 +534,15 @@ End Function
 
 Private Function IsIEnumVARAINT(ByVal obj As Object) As Boolean
     On Error Resume Next
-    Dim enumObj As Object
-    Set enumObj = CallByName(obj, "_NewEnum", VbGet)
-    If Err.Number <> 0 Then
-        IsIEnumVARAINT = False
+    Dim dummy As Variant
+    For Each dummy In obj
+        IsIEnumVARAINT = True
+        Exit For
+    Next dummy
+    If Err.Number = 0 Then
+        IsIEnumVARAINT = True
     Else
-        IsIEnumVARAINT = Not (enumObj Is Nothing)
+        IsIEnumVARAINT = False
     End If
     On Error GoTo 0
 End Function

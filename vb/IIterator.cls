@@ -16,7 +16,7 @@ Option Explicit
 Implements IIterable
 
 ' Returns the next element as a Variant.
-' Returns CVErr(CBasicPyTypes.StopIterationCode.StopIteration) when exhausted.
+' Returns CVErr(StopIterationCode.StopIteration) when exhausted.
 ' Once exhausted, every subsequent call must return the same sentinel.
 Public Function NextItem() As Variant
 End Function

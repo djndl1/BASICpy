@@ -1,6 +1,9 @@
 Option Explicit
 
 Public Enum CommonHResults
+    ' COM HRESULT codes
+    Success = 0
+    SFalse = 1
     ' Standard VB6 error codes
     ReturnWithoutGoSub = 3
     InvalidProcedureCall = 5
