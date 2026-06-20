@@ -20,6 +20,7 @@ Class=SupplierIterator; SupplierIterator.cls
 Class=SequenceIterator; SequenceIterator.cls
 Class=StringIterator; StringIterator.cls
 Class=EnumVARIANTIterator; EnumVARIANTIterator.cls
+Class=IContains; IContains.cls
 Class=IEnumVARIANTWrapper; IEnumVARIANTWrapper.cls
 Class=PyMath; PyMath.cls
 Module=ErrorCodes; ErrorCodes.bas
