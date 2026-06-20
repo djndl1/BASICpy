@@ -16,11 +16,21 @@ Option Explicit
 Implements ILength
 
 ' Returns the element at the given index (0-based, matching Python __getitem__).
-Public Function GetItem(ByVal index As Long) As Variant
+Public Function GetItem(ByVal Index As Long) As Variant
 End Function
 
 ' ISequence exposes its own length.
 Public Function Length() As Long
+End Function
+
+' Returns the number of occurrences of value in the sequence (sequence.count).
+Public Function count(ByVal value As Variant) As Long
+End Function
+
+' Returns the index of the first occurrence of value (sequence.index).
+' Optional start/stop bounds for efficient sub-range search.
+' Raises if value is not found.
+Public Function Index(ByVal value As Variant, Optional ByVal start As Variant, Optional ByVal stopAt As Variant) As Long
 End Function
 
 ' Delegates ILength.Length to ISequence's own Length.
