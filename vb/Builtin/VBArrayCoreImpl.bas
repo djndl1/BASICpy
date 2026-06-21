@@ -3,8 +3,8 @@ Option Explicit
 
 ' Core implementation for PyVBArray — returns a new VBArray from the given value.
 Public Function PyVBArrayCore(Optional ByRef value As Variant) As VBArray
-    Dim vba As VBArray
     Dim objVal As Object
+    Dim vba As VBArray
     
     ' No argument → empty
     If IsMissing(value) Then
@@ -16,8 +16,7 @@ Public Function PyVBArrayCore(Optional ByRef value As Variant) As VBArray
     If IsObject(value) Then
         Set objVal = value
         If TypeOf objVal Is VBArray Then
-            Dim src As VBArray
-            Set src = objVal
+            Dim src As VBArray: Set src = objVal
             Set PyVBArrayCore = src.Copy()
             Exit Function
         End If
@@ -45,9 +44,9 @@ Public Function PyVBArrayCore(Optional ByRef value As Variant) As VBArray
     End If
     
     ' Iterable → collect all items
-    Dim iter As IIterator: Set iter = PyIter(value)
+    Dim iter As IIterator: Set iter = Builtin.PyIter(value)
     Set vba = New VBArray
-    Dim item As Variant: Do While PyTryNext(iter, item)
+    Dim item As Variant: Do While Builtin.PyTryNext(iter, item)
         vba.Append item
     Loop
     Set PyVBArrayCore = vba

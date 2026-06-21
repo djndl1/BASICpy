@@ -37,13 +37,11 @@ Public Function PyLenImpl(ByRef value As Variant) As Long
             Exit Function
         End If
         If TypeOf value Is ILength Then
-            Dim lenImpl As ILength
-            Set lenImpl = value
+            Dim lenImpl As ILength: Set lenImpl = value
             PyLenImpl = lenImpl.Length()
             Exit Function
         Else
-            Dim matched As Boolean
-            PyLenImpl = PyLenByTypeOf(value, matched)
+            Dim matched As Boolean: PyLenImpl = PyLenByTypeOf(value, matched)
             If Not matched Then
                 PyLenImpl = PyLenByName(value)    ' returns -1 on failure, no raise
             End If

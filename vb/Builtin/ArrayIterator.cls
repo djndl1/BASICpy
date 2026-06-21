@@ -41,7 +41,8 @@ Private Function IIterator_NextItem() As Variant
     End If
 
     m_index = m_index + 1
-    IIterator_NextItem = m_data(m_index)
+
+    Builtin.LetSet IIterator_NextItem, m_data(m_index)
 
     If m_index = UBound(m_data) Then
         m_exhausted = True

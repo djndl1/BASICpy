@@ -32,7 +32,7 @@ End Function
 ' (only numeric scalars or IAbsolute objects).
 Public Function PyAbs(ByVal value As Variant) As Variant
 Attribute PyAbs.VB_Description = "Returns the absolute value of a number, matching Python's abs().\r\nVB6: Accepts numeric scalars or objects implementing IAbsolute. Arrays raise.\r\nArgs:\r\n  value (Variant): Numeric value or IAbsolute object.\r\nReturns:\r\n  Variant: The absolute value."
-    PyAbs = PyAbsCore(value)
+    LetSet PyAbs, PyAbsCore(value)
 End Function
 
 ' Python: all(iterable). VB6: ByRef for array safety. Optional IPredicate
@@ -68,7 +68,7 @@ End Function
 ' StopIteration convention. One-arg form raises; two-arg returns default.
 Public Function PyNext(ByRef iter As IIterator, Optional ByVal default As Variant) As Variant
 Attribute PyNext.VB_Description = "Returns the next item from an iterator, matching Python's next(it[, default]).\r\nVB6: Exhaustion detected via sentinel value (IsError).\r\nArgs:\r\n  iter (IIterator): The iterator to advance.\r\n  default (Variant): Optional default if iterator exhausted.\r\nReturns:\r\n  Variant: Next item or default. Raises if exhausted with no default."
-    PyNext = PyNextCore(iter, default)
+    LetSet PyNext, PyNextCore(iter, default)
 End Function
 
 ' Python: safe iterator loop helper (no direct Python equivalent but
@@ -86,7 +86,7 @@ End Function
 ' (identity preservation). Strings are iterated character by character.
 Public Function PyTuple(Optional ByRef value As Variant) As Variant
 Attribute PyTuple.VB_Description = "Creates an immutable Tuple from a value, matching Python's tuple().\r\nVB6: Existing Tuple is returned unchanged (identity preservation).\r\nArgs:\r\n  value (Variant): Array, string, iterable, or omitted for empty ().\r\nReturns:\r\n  Variant: Tuple object reference."
-    PyTuple = PyTupleCore(value)
+    LetSet PyTuple, PyTupleCore(value)
 End Function
 
 ' Python: bin(value). VB6: ByVal (integer only, no array). Accepts Byte,
@@ -136,8 +136,8 @@ End Function
 ' placed before IsMissing to avoid IsMissing throw on undimensioned arrays.
 ' Float truncation via VB6's Fix() matches Python's int(1.9) → 1.
 ' String parsing with prefix detection (0x/0o/0b), bases 2-36.
-Public Function PyInt(Optional ByVal value As Variant, Optional ByVal base As Variant) As Variant
-Attribute PyInt.VB_Description = "Converts a value to an integer, matching Python's int().\r\nVB6: Float truncation via Fix(). String parsing with 0x/0o/0b prefix detection, bases 2-36. Arrays raise TypeMismatch.\r\nArgs:\r\n  value (Variant): Number, string, IIndex object, or omitted (0).\r\n  base (Variant): Optional base (2-36) for string parsing.\r\nReturns:\r\n  Variant: Integer value."
+Public Function PyInt(Optional ByVal value As Variant, Optional ByVal base As Variant) As Long
+Attribute PyInt.VB_Description = "Converts a value to an integer, matching Python's int().\r\nVB6: Float truncation via Fix(). String parsing with 0x/0o/0b prefix detection, bases 2-36. Arrays raise TypeMismatch.\r\nArgs:\r\n  value (Variant): Number, string, IIndex object, or omitted (0).\r\n  base (Variant): Optional base (2-36) for string parsing.\r\nReturns:\r\n  Long: Integer value."
     PyInt = PyIntCore(value, base)
 End Function
 
@@ -160,3 +160,20 @@ Public Function PyIter(ByRef value As Variant, Optional ByVal sentinel As Varian
 Attribute PyIter.VB_Description = "Returns an iterator for the given object, matching Python's iter().\r\nVB6: Single-arg: IIterable → ArrayIterator → StringIterator → SequenceIterator → IEnumVARIANT. Two-arg: ISupplier + sentinel. Nothing raises.\r\nArgs:\r\n  value (Variant): Iterable (array, string, IIterable, COM collection).\r\n  sentinel (Variant): Optional sentinel for callable-based iteration.\r\nReturns:\r\n  IIterator: Iterator object."
     Set PyIter = PyIterCore(value, sentinel)
 End Function
+
+' Assigns a Variant value to a Variant variable with correct AddRef semantics.
+' VB6's Let (=) doesn't call AddRef on object references; Set calls AddRef
+' but throws on value types. This helper dispatches correctly for both.
+' Equivalent Python: variable = value
+' Usage:  LetSet result, someFunction()
+'         LetSet result, someVariant
+Public Sub LetSet(ByRef variable As Variant, ByRef value As Variant)
+Attribute LetSet.VB_Description = "Assigns a Variant to a Variant with correct object refcounting.\r\nVB6: Let fails to AddRef objects; Set throws on values. LetSet handles both.\r\nArgs:\r\n  variable (Variant): Destination (ByRef, receives the assigned value).\r\n  value (Variant): Source value or object reference.\r\nUsage:\r\n  LetSet result, someFunction()"
+    If IsObject(value) Then
+        Set variable = value
+    ElseIf VarType(value) = vbDataObject Then
+        Set variable = value
+    Else
+        variable = value
+    End If
+End Sub

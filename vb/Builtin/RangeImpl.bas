@@ -5,9 +5,9 @@ Option Explicit
 Public Function PyRangeCore(Optional ByVal arg1 As Variant, _
                         Optional ByVal arg2 As Variant, _
                         Optional ByVal arg3 As Long = 1) As RangeIterator
+    Dim stepVal As Long: stepVal = arg3
     Dim startVal As Long
     Dim stopVal As Long
-    Dim stepVal As Long: stepVal = arg3
     
     If IsMissing(arg1) Then
         startVal = 0: stopVal = 0: stepVal = 1

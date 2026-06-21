@@ -14,8 +14,7 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
     ' 1. IContains protocol (constant-time when available)
     If IsObject(container) Then
         If TypeOf container Is IContains Then
-            Dim c As IContains
-            Set c = container
+            Dim c As IContains: Set c = container
             PyInCore = c.Contains(item)
             Exit Function
         End If
@@ -40,7 +39,7 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
     End If
     
     ' 3. Iteration fallback
-    Dim element As Variant: Do While PyTryNext(PyIter(container), element)
+    Dim element As Variant: Do While Builtin.PyTryNext(Builtin.PyIter(container), element)
         If element = item Then
             PyInCore = True
             Exit Function
@@ -49,8 +48,7 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
     
     ' 4. Dynamic contains check — last resort for unknown types
     If IsObject(container) Then
-        Dim dynResult As Variant
-        dynResult = PyInDynamicCheck(item, dispObj)
+        Dim dynResult As Variant: dynResult = PyInDynamicCheck(item, dispObj)
         If Not IsEmpty(dynResult) Then
             PyInCore = dynResult
             Exit Function

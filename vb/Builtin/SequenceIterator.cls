@@ -40,7 +40,9 @@ Private Function IIterator_NextItem() As Variant
         m_exhausted = True
         IIterator_NextItem = CVErr(StopIterationCode.StopIteration)
     Else
-        IIterator_NextItem = m_sequence.GetItem(m_index)
+        Dim raw As Variant
+        Builtin.LetSet raw, m_sequence.GetItem(m_index)
+        Builtin.LetSet IIterator_NextItem, raw
     End If
 End Function
 

@@ -15,7 +15,7 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     If IsMissing(value) Then
         Set tup = New Tuple
         tup.Init Array()
-        Set PyTuple = tup
+        Set PyTupleCore = tup
         Exit Function
     End If
     
@@ -23,7 +23,7 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     If IsObject(value) Then
         Set objVal = value
         If TypeOf objVal Is Tuple Then
-            Set PyTuple = objVal
+            Set PyTupleCore = objVal
             Exit Function
         End If
     End If
@@ -32,14 +32,13 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     If IsArray(value) Then
         Set tup = New Tuple
         tup.Init value
-        Set PyTuple = tup
+        Set PyTupleCore = tup
         Exit Function
     End If
     
     ' String → iterate characters
     If VarType(value) = vbString Then
-        Dim str As String
-        str = value
+        Dim str As String: str = value
         Dim strLen As Long: strLen = Len(str)
         Dim strArr() As Variant
         Dim idx As Long
@@ -53,18 +52,17 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
         End If
         Set tup = New Tuple
         tup.Init strArr
-        Set PyTuple = tup
+        Set PyTupleCore = tup
         Exit Function
     End If
     
     ' Iterable (IIterable / IIterator / COM enumeration) → collect all items
-    Dim iter As IIterator
-    Set iter = PyIter(value)
+    Dim iter As IIterator: Set iter = Builtin.PyIter(value)
     
     ' Collect into a growable array using Collection as a dynamic buffer
     Dim buffer As New Collection
     Dim item As Variant
-    Do While PyTryNext(iter, item)
+    Do While Builtin.PyTryNext(iter, item)
         buffer.Add item
     Loop
     
@@ -75,7 +73,7 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     If bufLen > 0 Then
         ReDim resultArr(0 To bufLen - 1)
         For pos = 1 To bufLen
-            resultArr(pos - 1) = buffer(pos)
+            Builtin.LetSet resultArr(pos - 1), buffer(pos)
         Next pos
     Else
         resultArr = Array()
@@ -83,5 +81,5 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     
     Set tup = New Tuple
     tup.Init resultArr
-    Set PyTuple = tup
+    Set PyTupleCore = tup
 End Function

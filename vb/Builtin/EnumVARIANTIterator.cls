@@ -54,7 +54,7 @@ Private Function IIterator_NextItem() As Variant
     items = m_wrapper.NextItems(1)
 
     If UBound(items) >= 0 Then
-        IIterator_NextItem = items(0)
+        Builtin.LetSet IIterator_NextItem, items(0)
     Else
         m_exhausted = True
         IIterator_NextItem = CVErr(StopIterationCode.StopIteration)

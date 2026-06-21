@@ -45,7 +45,7 @@ Attribute item.VB_UserMemId = 0
         Ensure.IsTrue False, CommonHResults.SubscriptOutOfRange, _
             "VBArray.Item", "index out of range"
     End If
-    item = m_data(Index)
+    Builtin.LetSet item, m_data(Index)
 End Property
 
 ' Sets the element at index (value types).
@@ -133,7 +133,7 @@ Public Function Pop(Optional ByVal Index As Long = -1) As Variant
             "VBArray.Pop", "index out of range"
     End If
     
-    Pop = m_data(Index)
+    Builtin.LetSet Pop, m_data(Index)
     
     ' Shift elements left
     Dim tmp() As Variant: tmp = m_data

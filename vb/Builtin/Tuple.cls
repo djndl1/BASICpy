@@ -48,7 +48,7 @@ Public Function GetItem(ByVal Index As Long) As Variant
             "Tuple.GetItem", "index out of range"
     End If
     
-    GetItem = m_data(LBound(m_data) + Index)
+    Builtin.LetSet GetItem, m_data(LBound(m_data) + Index)
 End Function
 
 ' Returns the number of occurrences of value.
@@ -104,7 +104,7 @@ End Function
 ' Default Item property — enables tupleObj(index) syntax.
 Public Property Get item(ByVal Index As Long) As Variant
 Attribute item.VB_UserMemId = 0
-    item = GetItem(Index)
+    Builtin.LetSet item, GetItem(Index)
 End Property
 
 ' ─── IContains — O(n) scan ───

@@ -96,7 +96,7 @@ Public Function NextItems(ByVal count As Long) As Variant()
                 ReDim partial(0 To vFetched - 1)
                 Dim i As Long
                 For i = 0 To vFetched - 1
-                    partial(i) = buffer(i)
+                    Builtin.LetSet partial(i), buffer(i)
                 Next i
                 NextItems = partial
             End If

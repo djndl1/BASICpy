@@ -16,16 +16,14 @@ Public Function PyIterCore(ByRef value As Variant, Optional ByVal sentinel As Va
         ' --- Single-arg form ---
         If IsObject(value) Then
             If TypeOf value Is IIterable Then
-                Dim iterable As IIterable
-                Set iterable = value
+                Dim iterable As IIterable: Set iterable = value
                 Set PyIterCore = iterable.iter()
                 Exit Function
             End If
         End If
         
         ' Fallback: try arrays, ISequence, IEnumVARIANT, etc.
-        Dim fallback As IIterator
-        Set fallback = TryCreateFallbackIterator(value)
+        Dim fallback As IIterator: Set fallback = TryCreateFallbackIterator(value)
         If Not (fallback Is Nothing) Then
             Set PyIterCore = fallback
         Else
@@ -36,10 +34,8 @@ Public Function PyIterCore(ByRef value As Variant, Optional ByVal sentinel As Va
         ' Two-arg form: callable + sentinel
         If IsObject(value) Then
             If TypeOf value Is ISupplier Then
-                Dim supplier As ISupplier
-                Set supplier = value
-                Dim supplierIter As SupplierIterator
-                Set supplierIter = New SupplierIterator
+                Dim supplier As ISupplier: Set supplier = value
+                Dim supplierIter As SupplierIterator: Set supplierIter = New SupplierIterator
                 supplierIter.Init supplier, sentinel
                 Set PyIterCore = supplierIter
             Else

@@ -33,7 +33,9 @@ Private Function IIterator_NextItem() As Variant
     End If
 
     Dim result As Variant
-    result = m_supplier.GetResult()
+    Dim raw As Variant
+    Builtin.LetSet raw, m_supplier.GetResult()
+    Builtin.LetSet result, raw
 
     If IsObject(result) Then
         If result Is m_sentinel Then
@@ -49,7 +51,7 @@ Private Function IIterator_NextItem() As Variant
         End If
     End If
 
-    IIterator_NextItem = result
+    Builtin.LetSet IIterator_NextItem, result
 End Function
 
 Private Function IIterator_Iter() As IIterator

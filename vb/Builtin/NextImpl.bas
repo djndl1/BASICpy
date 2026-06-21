@@ -8,16 +8,17 @@ Option Explicit
 '   next(it, default)  → default returned
 Public Function PyNextCore(ByRef iter As IIterator, Optional ByVal default As Variant) As Variant
     Dim item As Variant
-    item = iter.NextItem()
+    Dim raw As Variant: Builtin.LetSet raw, iter.NextItem()
+    Builtin.LetSet item, raw
     If IsError(item) Then
         If IsMissing(default) Then
             Err.Raise StopIterationCode.StopIteration, "Builtin.PyNext", _
                 "iterator exhausted — no more items"
         Else
-            PyNext = default
+            Builtin.LetSet PyNextCore, default
         End If
     Else
-        PyNext = item
+        Builtin.LetSet PyNextCore, item
     End If
 End Function
 
@@ -32,11 +33,12 @@ End Function
 '   Loop
 Public Function PyTryNextCore(ByRef iter As IIterator, ByRef item As Variant) As Boolean
     Dim nextVal As Variant
-    nextVal = iter.NextItem()
+    Dim raw As Variant: Builtin.LetSet raw, iter.NextItem()
+    Builtin.LetSet nextVal, raw
     If IsError(nextVal) Then
-        PyTryNext = False
+        PyTryNextCore = False
     Else
-        PyTryNext = True
-        item = nextVal
+        PyTryNextCore = True
+        Builtin.LetSet item, nextVal
     End If
 End Function

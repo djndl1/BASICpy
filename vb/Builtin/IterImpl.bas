@@ -10,8 +10,7 @@ Option Explicit
 Public Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
     ' 1. Native VB6 arrays
     If IsArray(value) Then
-        Dim arrIter As ArrayIterator
-        Set arrIter = New ArrayIterator
+        Dim arrIter As ArrayIterator: Set arrIter = New ArrayIterator
         arrIter.Init value
         Set TryCreateFallbackIterator = arrIter
         Exit Function
@@ -19,8 +18,7 @@ Public Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
     
     ' 1b. Strings — character iterator
     If VarType(value) = vbString Then
-        Dim strIter As StringIterator
-        Set strIter = New StringIterator
+        Dim strIter As StringIterator: Set strIter = New StringIterator
         strIter.Init value
         Set TryCreateFallbackIterator = strIter
         Exit Function
@@ -29,10 +27,8 @@ Public Function TryCreateFallbackIterator(ByVal value As Variant) As IIterator
     ' 2. ISequence protocol (indexable sequence)
     If IsObject(value) Then
         If TypeOf value Is ISequence Then
-            Dim seq As ISequence
-            Set seq = value
-            Dim seqIter As SequenceIterator
-            Set seqIter = New SequenceIterator
+            Dim seq As ISequence: Set seq = value
+            Dim seqIter As SequenceIterator: Set seqIter = New SequenceIterator
             seqIter.Init seq
             Set TryCreateFallbackIterator = seqIter
             Exit Function

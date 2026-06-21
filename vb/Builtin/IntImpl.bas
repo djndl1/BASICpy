@@ -7,7 +7,7 @@ Option Explicit
 Public Function AsIntegerIndex(ByVal value As Variant) As Long
     If IsObject(value) Then
         ' Use PyInt for IIndex protocol — recursion handled internally
-        AsIntegerIndex = PyInt(value)
+        AsIntegerIndex = Builtin.PyInt(value)
     Else
         Select Case VarType(value)
             Case vbByte, vbInteger, vbLong
@@ -22,8 +22,7 @@ End Function
 ' Converts a single character to its digit value (0-35).
 ' Returns -1 for non-digit characters.
 Public Function CharToDigit(ByVal c As String) As Long
-    Dim code As Long
-    code = Asc(c)
+    Dim code As Long: code = Asc(c)
     If code >= 48 And code <= 57 Then           ' 0-9
         CharToDigit = code - 48
     ElseIf code >= 65 And code <= 90 Then       ' A-Z
