@@ -10,7 +10,7 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
             Exit Function
         End If
     End If
-    
+
     ' 1. IContains protocol (constant-time when available)
     If IsObject(container) Then
         If TypeOf container Is IContains Then
@@ -19,7 +19,7 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
             Exit Function
         End If
     End If
-    
+
     ' 1b. String container → substring matching (Python: y.find(x) != -1)
     If VarType(container) = vbString Then
         If VarType(item) <> vbString Then
@@ -29,7 +29,7 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
         PyInCore = (InStr(1, container, item, vbBinaryCompare) > 0)
         Exit Function
     End If
-    
+
     ' 2. Type-name fast path — known COM containers with O(1) lookup
     If IsObject(container) Then
         Dim dispObj As Object: Set dispObj = container
@@ -37,15 +37,16 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
         PyInCore = PyInByTypeName(item, dispObj, matched)
         If matched Then Exit Function
     End If
-    
+
     ' 3. Iteration fallback
-    Dim element As Variant: Do While Builtin.PyTryNext(Builtin.PyIter(container), element)
+    Dim iter As IIterator: Set iter = Builtin.PyIter(container)
+    Dim element As Variant: Do While Builtin.PyTryNext(iter, element)
         If element = item Then
             PyInCore = True
             Exit Function
         End If
     Loop
-    
+
     ' 4. Dynamic contains check — last resort for unknown types
     If IsObject(container) Then
         Dim dynResult As Variant: dynResult = PyInDynamicCheck(item, dispObj)
@@ -54,6 +55,6 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
             Exit Function
         End If
     End If
-    
+
     PyInCore = False
 End Function
