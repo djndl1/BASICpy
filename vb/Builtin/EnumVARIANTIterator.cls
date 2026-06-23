@@ -49,13 +49,9 @@ Private Function IIterator_NextItem() As Variant
         Exit Function
     End If
 
-    ' Fetch one item through the wrapper
-    Dim items As Variant
-    items = m_wrapper.NextItems(1)
+    Builtin.LetSet IIterator_NextItem, m_wrapper.NextItem()
 
-    If UBound(items) >= 0 Then
-        Builtin.LetSet IIterator_NextItem, items(0)
-    Else
+    If IsEmpty(IIterator_NextItem) Then
         m_exhausted = True
         IIterator_NextItem = CVErr(StopIterationCode.StopIteration)
     End If
