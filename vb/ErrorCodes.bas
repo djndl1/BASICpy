@@ -1,3 +1,4 @@
+Attribute VB_Name = "ErrorCodes"
 Option Explicit
 
 Public Enum CommonHResults

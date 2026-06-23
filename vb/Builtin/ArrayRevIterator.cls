@@ -26,11 +26,11 @@ Private m_exhausted As Boolean  ' True after first element (LBound) has been ret
 Public Sub Init(ByRef arr As Variant)
     Ensure.IsTrue IsArray(arr), CommonHResults.TypeMismatch, _
         "ArrayRevIterator.Init", "arr must be an array"
-    
+
     m_lBound = LBound(arr)
     m_index = UBound(arr)
     m_data = arr
-    m_exhausted = (m_lBound > UBound(arr))
+    m_exhausted = (m_lBound > m_index)
 End Sub
 
 Private Function IIterator_NextItem() As Variant
@@ -38,13 +38,13 @@ Private Function IIterator_NextItem() As Variant
         IIterator_NextItem = CVErr(StopIterationCode.StopIteration)
         Exit Function
     End If
-    
+
     Builtin.LetSet IIterator_NextItem, m_data(m_index)
-    
-    If m_index = m_lBound Then
+
+    If m_index <= m_lBound Then
         m_exhausted = True
     End If
-    
+
     m_index = m_index - 1
 End Function
 
