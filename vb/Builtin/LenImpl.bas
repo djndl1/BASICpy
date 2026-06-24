@@ -22,35 +22,35 @@ Public Function PyLenImpl(ByRef value As Variant) As Long
         On Error GoTo 0
         Exit Function
     End If
-    
+
     ' Strings — Len never fails
     If VarType(value) = vbString Then
         PyLenImpl = Len(value)
         Exit Function
     End If
-    
-    ' Objects
-    If IsObject(value) Then
-        ' Nothing — no length, return -1 (caller raises error)
-        If value Is Nothing Then
-            PyLenImpl = -1
-            Exit Function
-        End If
-        If TypeOf value Is ILength Then
-            Dim lenImpl As ILength: Set lenImpl = value
-            PyLenImpl = lenImpl.Length()
-            Exit Function
-        Else
-            Dim matched As Boolean: PyLenImpl = PyLenByTypeOf(value, matched)
-            If Not matched Then
-                PyLenImpl = PyLenByName(value)    ' returns -1 on failure, no raise
-            End If
-            Exit Function
-        End If
+
+    If Not IsObject(value) Then
+        ' Non-lengthable type
+        PyLenImpl = -1
     End If
-    
-    ' Non-lengthable type
-    PyLenImpl = -1
+
+    ' Nothing — no length, return -1 (caller raises error)
+    If value Is Nothing Then
+        PyLenImpl = -1
+        Exit Function
+    End If
+
+    If TypeOf value Is ILength Then
+        Dim lenImpl As ILength: Set lenImpl = value
+        PyLenImpl = lenImpl.Length()
+        Exit Function
+    End If
+
+    Dim matched As Boolean: PyLenImpl = PyLenByTypeOf(value, matched)
+    If Not matched Then
+        PyLenImpl = PyLenByName(value)    ' returns -1 on failure, no raise
+    End If
+    Exit Function
 End Function
 
 ' Dispatches to Count/Length/RecordCount based on TypeName(value).

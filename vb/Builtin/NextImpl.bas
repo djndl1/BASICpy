@@ -7,19 +7,22 @@ Option Explicit
 '   next(it)           → StopIteration raised
 '   next(it, default)  → default returned
 Public Function PyNextCore(ByRef iter As IIterator, Optional ByVal default As Variant) As Variant
-    Dim item As Variant
-    Dim raw As Variant: Builtin.LetSet raw, iter.NextItem()
-    Builtin.LetSet item, raw
-    If IsError(item) Then
-        If IsMissing(default) Then
-            Err.Raise StopIterationCode.StopIteration, "Builtin.PyNext", _
-                "iterator exhausted — no more items"
-        Else
-            Builtin.LetSet PyNextCore, default
-        End If
-    Else
-        Builtin.LetSet PyNextCore, item
+    Builtin.LetSet PyNextCore, iter.NextItem()
+
+    ' Guard: item available — return it
+    If Not IsError(PyNextCore) Then
+        Exit Function
     End If
+
+    ' Guard: one-arg form — raise StopIteration
+    If IsMissing(default) Then
+        Err.Raise StopIterationCode.StopIteration, "Builtin.PyNext", _
+            "iterator exhausted — no more items"
+        Exit Function
+    End If
+
+    ' Two-arg form + exhausted: return default
+    Builtin.LetSet PyNextCore, default
 End Function
 
 ' Safe iteration helper that avoids the prime-then-loop pattern.
@@ -33,12 +36,15 @@ End Function
 '   Loop
 Public Function PyTryNextCore(ByRef iter As IIterator, ByRef item As Variant) As Boolean
     Dim nextVal As Variant
-    Dim raw As Variant: Builtin.LetSet raw, iter.NextItem()
-    Builtin.LetSet nextVal, raw
+    Builtin.LetSet nextVal, iter.NextItem()
+
+    ' Guard: iterator exhausted
     If IsError(nextVal) Then
         PyTryNextCore = False
-    Else
-        PyTryNextCore = True
-        Builtin.LetSet item, nextVal
+        Exit Function
     End If
+
+    ' Happy path: item available
+    PyTryNextCore = True
+    Builtin.LetSet item, nextVal
 End Function

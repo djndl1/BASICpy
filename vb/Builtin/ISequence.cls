@@ -24,7 +24,7 @@ Public Function Length() As Long
 End Function
 
 ' Returns the number of occurrences of value in the sequence (sequence.count).
-Public Function count(ByVal value As Variant) As Long
+Public Function Count(ByVal value As Variant) As Long
 End Function
 
 ' Returns the index of the first occurrence of value (sequence.index).
