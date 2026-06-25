@@ -54,6 +54,7 @@ Public Declare Function DispCallFunc Lib "oleaut32" ( _
     ByRef prgvt As Integer, _
     ByRef prgpvarg As Long, _
     ByRef pvargResult As Variant) As Long
+
 Public Function TryGetEnum(ByRef source As Object, ByRef enumOut As IUnknown) As Long
     Dim dispObj As IUnknown: Set dispObj = source
     Dim ObjEnum As Variant: ObjEnum = Empty
@@ -64,7 +65,7 @@ Public Function TryGetEnum(ByRef source As Object, ByRef enumOut As IUnknown) As
     If callResult = 0 And VarType(ObjEnum) = vbDataObject Then
         Set enumOut = ObjEnum
     End If
-    
+
     TryGetEnum = callResult
 End Function
 
@@ -91,12 +92,9 @@ Public Function CallByDispId(ByRef obj As Object, _
                              ByRef resultVar As Variant, _
                              ParamArray args() As Variant) As Long
 
-    ' GUID_NULL (16 bytes of zeros — riid parameter)
-    Dim nullGuid(0 To 3) As Long
+    ' GUID_NULL (16 bytes of zeros — riid parameter, static to avoid per-call zero-init)
+    Static nullGuid(0 To 3) As Long
     Dim lcid As Long: lcid = 0
-
-    ' Build DISPPARAMS from args (reversed order — IDispatch convention)
-    Dim params As DISPPARAMS
 
     Dim cArgs As Long
     On Error Resume Next
@@ -104,11 +102,12 @@ Public Function CallByDispId(ByRef obj As Object, _
     If Err.Number <> 0 Then cArgs = 0: Err.Clear
     On Error GoTo 0
 
+    ' Build DISPPARAMS from args (reversed order — IDispatch convention)
+    Dim params As DISPPARAMS
     If cArgs > 0 Then
         ' Create reversed copy: IDispatch::Invoke expects last argument
         ' first in the rgvarg array (right-to-left calling convention)
-        Dim argCopy() As Variant
-        ReDim argCopy(0 To cArgs - 1)
+        ReDim argCopy(0 To cArgs - 1) As Variant
         Dim i As Long
         For i = 0 To cArgs - 1
             argCopy(i) = args(cArgs - 1 - i)
@@ -159,9 +158,7 @@ Public Function CallByDispId(ByRef obj As Object, _
     pv(7) = VarPtr(vArgErr)          ' Variant containing pointer to argErr
 
     Dim invokeHr As Variant
-
-    Dim dispHr As Long
-    dispHr = DispCallFunc(ObjPtr(obj), VTABLE_INVOKE, CallingConvention.StdCall, vbLong, 8, _
+    Dim dispHr As Long: dispHr = DispCallFunc(ObjPtr(obj), VTABLE_INVOKE, CallingConvention.StdCall, vbLong, 8, _
                           vt(0), pv(0), invokeHr)
     If invokeHr = DISP_E_EXCEPTION Then
         CallByDispId = excepInfo.scode
