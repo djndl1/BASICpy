@@ -22,6 +22,12 @@ Private Type EXCEPINFO
     scode As Long             ' SCODE — actual error code
 End Type
 
+' --- struct _complex for C math functions ---
+Public Type Complex
+    x As Double
+    y As Double
+End Type
+
 ' --- Pointer size for vtable dispatch (4 on 32-bit, 8 on 64-bit) ---
 #If Win64 Then
     Public Const POINTER_LENGTH As Long = 8
@@ -32,9 +38,19 @@ End Type
 ' --- VARTYPE constants ---
 Public Const VT_BYREF As Integer = &H4000   ' only VARTYPE not built into VB6
 
-' --- Calling convention ---
-Public Enum CallingConvention
-    StdCall = 4
+' --- CALLCONV (oaidl.h) — calling convention for DispCallFunc ---
+Public Enum CALLCONV
+    CC_FASTCALL = 0
+    CC_CDECL = 1
+    CC_MSCPASCAL = 2
+    CC_PASCAL = 2           ' = CC_MSCPASCAL
+    CC_MACPASCAL = 3
+    CC_STDCALL = 4
+    CC_FPFASTCALL = 5
+    CC_SYSCALL = 6
+    CC_MPWCDECL = 7
+    CC_MPWPASCAL = 8
+    CC_MAX = 9
 End Enum
 
 ' --- IDispatch vtable offsets ---
@@ -54,6 +70,17 @@ Public Declare Function DispCallFunc Lib "oleaut32" ( _
     ByRef prgvt As Integer, _
     ByRef prgpvarg As Long, _
     ByRef pvargResult As Variant) As Long
+
+' --- Dynamic library loading for CDeclCall ---
+Public Declare Function LoadLibraryW Lib "kernel32" ( _
+    ByVal lpLibFileName As Long) As Long           ' LPCWSTR — pass StrPtr(name)
+    
+Public Declare Function GetProcAddress Lib "kernel32" ( _
+    ByVal hModule As Long, _
+    ByVal lpProcName As String) As Long            ' LPCSTR — ANSI function name
+
+Public Declare Function FreeLibrary Lib "kernel32" ( _
+    ByVal hModule As Long) As Long
 
 Public Function TryGetEnum(ByRef source As Object, ByRef enumOut As IUnknown) As Long
     Dim dispObj As IUnknown: Set dispObj = source
@@ -141,7 +168,7 @@ Public Function CallByDispId(ByRef obj As Object, _
     Dim vWFlags As Variant: vWFlags = callType
     Dim vDispParams As Variant: vDispParams = VarPtr(params)
     Dim pVarResult As Variant: pVarResult = VarPtr(resultVar)
-    Dim excepInfo As EXCEPINFO          ' zero-initialised by VB6 Dim
+    Dim excepInfo As excepInfo          ' zero-initialised by VB6 Dim
     Dim vExcepInfo As Variant: vExcepInfo = CLng(VarPtr(excepInfo))
     Dim argErr As Long: argErr = -1
     Dim vArgErr As Variant: vArgErr = VarPtr(argErr)
@@ -158,11 +185,67 @@ Public Function CallByDispId(ByRef obj As Object, _
     pv(7) = VarPtr(vArgErr)          ' Variant containing pointer to argErr
 
     Dim invokeHr As Variant
-    Dim dispHr As Long: dispHr = DispCallFunc(ObjPtr(obj), VTABLE_INVOKE, CallingConvention.StdCall, vbLong, 8, _
+    Dim dispHr As Long: dispHr = DispCallFunc(ObjPtr(obj), VTABLE_INVOKE, CALLCONV.CC_STDCALL, vbLong, 8, _
                           vt(0), pv(0), invokeHr)
     If invokeHr = DISP_E_EXCEPTION Then
         CallByDispId = excepInfo.scode
     Else
         CallByDispId = invokeHr
+    End If
+End Function
+
+' Returns the decorated export name for a CDECL function.
+' Win32: prepends "_" (e.g., "_wsprintf")
+' Win64: no decoration (name is used as-is)
+Public Function CDeclMangle(ByVal funcName As String) As String
+#If Win64 Then
+    CDeclMangle = funcName
+#Else
+    CDeclMangle = "_" & funcName
+#End If
+End Function
+
+' Calls a C function (CDECL calling convention) at the given address.
+'
+' Parameters:
+'   funcPtr    - Address of the function to call (from GetProcAddress, AddressOf, etc.)
+'   resultType - VARTYPE of the return value (vbLong, vbString, vbEmpty for void, etc.)
+'   resultVar  - Variant that receives the return value
+'   args       - Variant array of positional arguments
+'
+' Returns:
+'   HRESULT from DispCallFunc (0 = S_OK).
+'   The actual function return value is written into resultVar.
+Public Function CDeclCall(ByVal funcPtr As Long, _
+                          ByVal resultType As Integer, _
+                          ByRef resultVar As Variant, _
+                          ByRef args() As Variant) As Long
+    Dim cActuals As Long
+    On Error Resume Next
+    cActuals = UBound(args) - LBound(args) + 1
+    If Err.Number <> 0 Then cActuals = 0: Err.Clear
+    On Error GoTo 0
+    
+    If cActuals > 0 Then
+        ' Build prgvt (VARTYPE of each arg) and prgpvarg (VarPtr of each arg)
+        Dim prgvt() As Integer
+        Dim prgpvarg() As Long
+        ReDim prgvt(0 To cActuals - 1)
+        ReDim prgpvarg(0 To cActuals - 1)
+        
+        Dim i As Long
+        For i = 0 To cActuals - 1
+            prgvt(i) = VarType(args(i))
+            prgpvarg(i) = VarPtr(args(i))
+        Next i
+        
+        CDeclCall = DispCallFunc(0, funcPtr, CALLCONV.CC_CDECL, resultType, _
+                                 cActuals, prgvt(0), prgpvarg(0), resultVar)
+    Else
+        ' No arguments: pass dummy variables for ByRef prgvt/prgpvarg
+        Dim vt As Integer
+        Dim pv As Long
+        CDeclCall = DispCallFunc(0, funcPtr, CALLCONV.CC_CDECL, resultType, _
+                                 0, vt, pv, resultVar)
     End If
 End Function
