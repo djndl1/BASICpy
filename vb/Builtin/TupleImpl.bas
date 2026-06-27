@@ -42,13 +42,12 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
         Dim strLen As Long: strLen = Len(str)
         Dim strArr() As Variant
         Dim idx As Long
+        strArr = Array()   ' default for empty string
         If strLen > 0 Then
             ReDim strArr(0 To strLen - 1)
             For idx = 0 To strLen - 1
                 strArr(idx) = Mid$(str, idx + 1, 1)
             Next idx
-        Else
-            strArr = Array()
         End If
         Set tup = New Tuple
         tup.Init strArr
@@ -70,13 +69,12 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     Dim bufLen As Long: bufLen = buffer.count
     Dim resultArr() As Variant
     Dim pos As Long
+    resultArr = Array()   ' default for empty buffer
     If bufLen > 0 Then
         ReDim resultArr(0 To bufLen - 1)
         For pos = 1 To bufLen
             Builtin.LetSet resultArr(pos - 1), buffer(pos)
         Next pos
-    Else
-        resultArr = Array()
     End If
     
     Set tup = New Tuple

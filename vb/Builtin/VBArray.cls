@@ -49,8 +49,8 @@ Public Sub Init(ByRef arr As Variant)
 End Sub
 
 ' Returns the number of elements.
-Public Function Length() As Long
-    Length = m_len
+Public Function length() As Long
+    length = m_len
 End Function
 
 ' Returns the physical capacity of the backing array.
@@ -73,35 +73,21 @@ Private Sub EnsureCapacity(ByVal needed As Long)
     m_data = tmp
 End Sub
 
-' Normalizes a user 0-based index (supports negative) to internal storage index.
-' allowAppend=True permits Index=Length (for insert-at-end).
-Private Function ResolveIndex(ByVal Index As Long, ByVal sz As Long, _
-                              Optional ByVal allowAppend As Boolean = False) As Long
-    If Index < 0 Then Index = sz + Index
-    Dim max As Long
-    If allowAppend Then max = sz Else max = sz - 1
-    If Index < 0 Or Index > max Then
-        Ensure.IsTrue False, CommonHResults.SubscriptOutOfRange, _
-            "VBArray", "index out of range"
-        Exit Function
-    End If
-    ResolveIndex = m_lb + Index
-End Function
 
 ' Returns the element at index (0-based, supports negative indexing).
-Public Property Get Item(ByVal Index As Long) As Variant
+Public Property Get item(ByVal Index As Long) As Variant
 Attribute item.VB_UserMemId = 0
-    Builtin.LetSet item, m_data(ResolveIndex(Index, Length()))
+    Builtin.LetSet item, m_data(ArrayUtility.ArrayResolveIndex(Index, m_len, m_lb))
 End Property
 
 ' Sets the element at index (value types).
-Public Property Let Item(ByVal Index As Long, ByRef value As Variant)
-    m_data(ResolveIndex(Index, Length())) = value
+Public Property Let item(ByVal Index As Long, ByRef value As Variant)
+    m_data(ArrayResolveIndex(Index, m_len, m_lb)) = value
 End Property
 
 ' Sets the element at index (object references).
 Public Property Set item(ByVal Index As Long, ByRef rhs As Variant)
-    Set m_data(ResolveIndex(Index, Length())) = rhs
+    Set m_data(ArrayResolveIndex(Index, m_len, m_lb)) = rhs
 End Property
 
 ' ─── IMutableSequence public methods ───
@@ -144,7 +130,7 @@ Public Sub Extend(ByRef iterable As Variant)
 End Sub
 
 Public Sub Insert(ByVal Index As Long, ByRef value As Variant)
-    Dim actual As Long: actual = ResolveIndex(Index, m_len, True)
+    Dim actual As Long: actual = ArrayResolveIndex(Index, m_len, m_lb, True)
     EnsureCapacity m_len + 1
 
     ' Shift elements right
@@ -163,7 +149,7 @@ Public Function Pop(Optional ByVal Index As Long = -1) As Variant
             "VBArray.Pop", "cannot pop from empty array"
     End If
 
-    Dim actual As Long: actual = ResolveIndex(Index, m_len)
+    Dim actual As Long: actual = ArrayResolveIndex(Index, m_len, m_lb)
     Builtin.LetSet Pop, m_data(actual)
 
     ' Shift elements left (spare capacity provides room)
@@ -200,31 +186,13 @@ Public Sub Remove(ByRef value As Variant)
 End Sub
 
 Public Sub Reverse()
-    Dim tmp() As Variant: tmp = m_data
-    Dim i As Long: i = m_lb
-    Dim j As Long: j = m_lb + m_len - 1
-    Dim t As Variant
-    While i < j
-        t = tmp(i)
-        tmp(i) = tmp(j)
-        tmp(j) = t
-        i = i + 1
-        j = j - 1
-    Wend
-    m_data = tmp
+    ReverseInPlace m_data, m_lb, m_len
 End Sub
 
 ' ─── IContains — O(n) scan ───
 
 Private Function IContains_Contains(ByVal value As Variant) As Boolean
-    Dim i As Long
-    For i = 0 To m_len - 1
-        If m_data(m_lb + i) = value Then
-            IContains_Contains = True
-            Exit Function
-        End If
-    Next i
-    IContains_Contains = False
+    IContains_Contains = (ArrayCountOf(m_data, m_lb, m_len, value) > 0)
 End Function
 
 ' ─── ISequence ───
@@ -234,14 +202,11 @@ Private Function ISequence_GetItem(ByVal Index As Long) As Variant
 End Function
 
 Private Function ISequence_Length() As Long
-    ISequence_Length = Length()
+    ISequence_Length = length()
 End Function
 
 Private Function ISequence_Count(ByVal value As Variant) As Long
-    Dim i As Long
-    For i = 0 To m_len - 1
-        If m_data(m_lb + i) = value Then ISequence_Count = ISequence_Count + 1
-    Next i
+    ISequence_Count = ArrayCountOf(m_data, m_lb, m_len, value)
 End Function
 
 Private Function ISequence_Index(ByVal value As Variant, _
@@ -251,28 +216,23 @@ Private Function ISequence_Index(ByVal value As Variant, _
     If IsMissing(start) Then startIdx = 0 Else startIdx = CLng(start)
     If startIdx < 0 Then startIdx = m_len + startIdx
     If startIdx < 0 Then startIdx = 0
-
+    
     Dim stopIdx As Long
     If IsMissing(stopAt) Then stopIdx = m_len Else stopIdx = CLng(stopAt)
     If stopIdx < 0 Then stopIdx = m_len + stopIdx
     If stopIdx > m_len Then stopIdx = m_len
-
-    Dim i As Long
-    For i = m_lb + startIdx To m_lb + stopIdx - 1
-        If m_data(i) = value Then
-            ISequence_Index = i - m_lb
-            Exit Function
-        End If
-    Next i
-
-    Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-        "VBArray.Index", "value not in sequence"
+    
+    ISequence_Index = ArrayIndexOf(m_data, m_lb, m_len, value, startIdx, stopIdx)
+    If ISequence_Index = -1 Then
+        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
+            "VBArray.Index", "value not in sequence"
+    End If
 End Function
 
 ' ─── ILength ───
 
 Private Function ILength_Length() As Long
-    ILength_Length = Length()
+    ILength_Length = length()
 End Function
 
 ' ─── IIterable — fast-path iteration via SequenceIterator ───

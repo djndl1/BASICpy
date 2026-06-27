@@ -145,7 +145,7 @@ Private Function NextRaw(ByVal celt As Long, ByVal rgvarPtr As Long, _
     Dim result As Variant
     Dim hr As Long
     hr = DispCall.DispCallFunc(ObjPtr(m_enum), 3 * DispCall.POINTER_LENGTH, _
-        DispCall.CallingConvention.StdCall, vbLong, 3, _
+        DispCall.CALLCONV.CC_STDCALL, vbLong, 3, _
         vt(0), pv(0), result)
 
     outResult = result
@@ -170,7 +170,7 @@ Public Sub Skip(ByVal count As Long)
     Dim vt As Integer: vt = vbLong
     Dim result As Variant
     Dim hr As Long: hr = DispCall.DispCallFunc(ObjPtr(m_enum), 4 * DispCall.POINTER_LENGTH, _
-                                               DispCall.CallingConvention.StdCall, vbLong, 1, _
+                                               DispCall.CALLCONV.CC_STDCALL, vbLong, 1, _
                                                vt, pv, result)
 
     If hr <> 0 Then
@@ -186,7 +186,7 @@ Public Sub Reset()
     Dim pv As Long
     Dim result As Variant
     Dim hr As Long: hr = DispCall.DispCallFunc(ObjPtr(m_enum), 5 * DispCall.POINTER_LENGTH, _
-                                               DispCall.CallingConvention.StdCall, vbLong, 0, _
+                                               DispCall.CALLCONV.CC_STDCALL, vbLong, 0, _
                                                vt, pv, result)
 
     If hr <> 0 Then
@@ -202,7 +202,7 @@ Public Function Clone() As IEnumVARIANTWrapper
 
     Dim result As Variant
     Dim hr As Long: hr = DispCall.DispCallFunc(ObjPtr(m_enum), 6 * DispCall.POINTER_LENGTH, _
-                                               DispCall.CallingConvention.StdCall, vbLong, 1, _
+                                               DispCall.CALLCONV.CC_STDCALL, vbLong, 1, _
                                                vtClone, pvClone, result)
 
     If hr <> 0 Then
