@@ -6,15 +6,12 @@ BEGIN
   DataSourceBehavior  = 0  'vbNone
   MTSTransactionMode  = 0  'NotAnMTSObject
 END
-Attribute VB_Name = "LibraryVariable"
+Attribute VB_Name = "UnownedMemoryObject"
 Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 Option Explicit
-
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
-    (ByRef dest As Any, ByRef src As Any, ByVal length As Long)
 
 Private m_ptr As Long
 
@@ -24,8 +21,8 @@ Public Sub Init(ByVal ptr As Long)
 End Sub
 
 ' Returns the raw pointer to the DLL variable.
-Public Property Get Ptr() As Long
-    Ptr = m_ptr
+Public Property Get ptr() As Long
+    ptr = m_ptr
 End Property
 
 ' Whether this wrapper holds a valid (non-null) pointer.
@@ -83,6 +80,10 @@ Public Sub GetAsByteArray(ByRef data() As Byte)
     CopyMemory data(LBound(data)), ByVal m_ptr, lenBytes
 End Sub
 
+Public Function GetAsString() As String
+    GetAsString = NativeUtility.NullTerminatedWStringToBStr(m_ptr)
+End Function
+
 ' ─── Write ───
 
 Public Sub SetAsByte(ByVal value As Byte)
@@ -120,4 +121,10 @@ Public Sub SetAsByteArray(ByRef data() As Byte)
     Err.Clear
     On Error GoTo 0
     CopyMemory ByVal m_ptr, data(LBound(data)), lenBytes
+End Sub
+
+' ─── String operations ───
+Public Sub SetAsString(ByRef value As String)
+    If m_ptr = 0 Then Exit Sub
+    NativeUtility.CopyStringToNullTerminatedWString m_ptr, value
 End Sub

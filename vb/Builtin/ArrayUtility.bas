@@ -8,15 +8,15 @@ Public Function ArrayResolveIndex(ByVal Index As Long, ByVal length As Long, _
                                   ByVal lb As Long, _
                                   Optional ByVal allowAppend As Boolean = False) As Long
     If Index < 0 Then Index = length + Index
-    
+
     Dim max As Long
     If allowAppend Then max = length Else max = length - 1
-    
+
     If Index < 0 Or Index > max Then
         Ensure.IsTrue False, CommonHResults.SubscriptOutOfRange, _
             "ArrayResolveIndex", "index (" & Index & ") out of range"
     End If
-    
+
     ArrayResolveIndex = lb + Index
 End Function
 
@@ -37,16 +37,16 @@ Public Function ArrayIndexOf(ByRef arr As Variant, ByVal lb As Long, _
                              ByVal length As Long, ByRef value As Variant, _
                              Optional ByVal start As Long = 0, _
                              Optional ByVal stopAt As Long = -1) As Long
-    
+
     ' Default stopAt to length (entire range)
     If stopAt = -1 Then stopAt = length
-    
+
     ' Normalize negative indices
     If start < 0 Then start = length + start
     If start < 0 Then start = 0
     If stopAt < 0 Then stopAt = length + stopAt
     If stopAt > length Then stopAt = length
-    
+
     Dim i As Long
     For i = lb + start To lb + stopAt - 1
         If arr(i) = value Then
@@ -54,7 +54,7 @@ Public Function ArrayIndexOf(ByRef arr As Variant, ByVal lb As Long, _
             Exit Function
         End If
     Next i
-    
+
     ArrayIndexOf = -1
 End Function
 

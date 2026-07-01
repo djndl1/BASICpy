@@ -12,4 +12,4 @@ if [ ! -d "$root" ]; then
     exit 1
 fi
 
-find "$root" -type f \( -name '*.cls' -o -name '*.bas' \) -exec unix2dos {} \;
+find "$root" -type f \( -name '*.cls' -o -name '*.bas' -o -name '*.vbp' \) -exec unix2dos {} \;

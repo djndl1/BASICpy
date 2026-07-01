@@ -13,10 +13,6 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Option Explicit
 
-Private Declare Function lstrlenW Lib "kernel32" (ByVal lpString As Long) As Long
-Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" _
-    (ByRef dest As Any, ByRef src As Any, ByVal length As Long)
-
 Private m_fn_errno As CDeclLibraryFunction
 
 Public Enum ErrnoValue
@@ -148,17 +144,5 @@ Public Function wcserror(ByVal errnum As Long) As String
     args(0) = errnum
     Dim result As Variant
     fn.CallFunc vbLong, result, args
-    wcserror = PtrToWStr(CLng(result))
-End Function
-
-' Copies a C wchar_t* (null-terminated wide string) into a VB String.
-Private Function PtrToWStr(ByVal ptr As Long) As String
-    If ptr = 0 Then Exit Function
-    Dim chars As Long
-    chars = lstrlenW(ptr)
-    If chars = 0 Then Exit Function
-    Dim buf() As Byte
-    ReDim buf(0 To chars * 2 - 1) As Byte
-    CopyMemory buf(0), ByVal ptr, chars * 2
-    PtrToWStr = buf
+    wcserror = NullTerminatedWStringToBStr(CLng(result))
 End Function

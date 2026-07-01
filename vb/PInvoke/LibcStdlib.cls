@@ -13,9 +13,9 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = True
 Option Explicit
 
-Private m_fmode As LibraryVariable
+Private m_fmode As UnownedMemoryObject
 
-Private Function EnsureFmode() As LibraryVariable
+Private Function EnsureFmode() As UnownedMemoryObject
     If m_fmode Is Nothing Then _
         Set m_fmode = LibcLibrary.ResolveVariable("_fmode")
     Set EnsureFmode = m_fmode

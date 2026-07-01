@@ -34,7 +34,7 @@ End Sub
 
 ' Shared resolver: cache lookup → GetProcAddress → wraps result.
 ' asVariable=False returns CDeclLibraryFunction (for ResolveFunction).
-' asVariable=True  returns LibraryVariable  (for ResolveVariable).
+' asVariable=True  returns UnownedMemoryObject  (for ResolveVariable).
 Private Function ResolveRaw(ByVal name As String, _
                             Optional ByVal mangle As Boolean = True, _
                             Optional ByVal asVariable As Boolean = False) As Object
@@ -52,8 +52,8 @@ Private Function ResolveRaw(ByVal name As String, _
     If raw Is Nothing Then Exit Function
     
     If asVariable Then
-        Dim var As LibraryVariable
-        Set var = New LibraryVariable
+        Dim var As UnownedMemoryObject
+        Set var = New UnownedMemoryObject
         var.Init raw.Ptr
         m_cache.Add var, name
         Set ResolveRaw = var
@@ -72,9 +72,9 @@ Public Function ResolveFunction(ByVal name As String, _
 End Function
 
 ' Resolves a C runtime data export (variable, not a function) by name.
-' Caches the LibraryVariable directly.
+' Caches the UnownedMemoryObject directly.
 Public Function ResolveVariable(ByVal name As String, _
-                                Optional ByVal mangle As Boolean = True) As LibraryVariable
+                                Optional ByVal mangle As Boolean = True) As UnownedMemoryObject
     Set ResolveVariable = ResolveRaw(name, mangle, True)
 End Function
 
