@@ -118,7 +118,7 @@ End Function
 ' Boolean→self, numeric→nonzero, length→(len>0), IBoolean→.__bool__(),
 ' ILength→len>0, objects→True, fallback→CBool or True.
 Public Function PyBool(Optional ByRef value As Variant) As Boolean
-Attribute PyBool.VB_Description = "Returns the truth value matching Python's bool().\r\nVB6: Dispatch order �?Nothing→F, missing/empty/null→F, Boolean→self, numeric→nonzero, length→len>0, IBoolean.__bool__(), ILength.__len__()>0, objects→T, fallback→CBool or T.\r\nArgs:\r\n  value (Variant): Optional value or omitted (False).\r\nReturns:\r\n  Boolean: Truth value."
+Attribute PyBool.VB_Description = "Returns the truth value matching Python's bool().\r\nVB6: Dispatch order �?Nothing→F, missing/empty/null→F, Boolean→self, numeric→nonzero, length→len>0, IBoolean.__bool__(), ILength.__len__()>0, objects→T, fallback→CBool or T.\r\nArgs:\r\n  value (Variant): Optional value or omitted (False).\r\nReturns:\r\n  Boolean: Truth value."
     PyBool = PyBoolImpl.PyBoolCore(value)
 End Function
 
@@ -147,7 +147,7 @@ End Function
 ' → iteration fallback → dynamic IDispatch trial (last resort).
 ' VB6 arrays: undimensioned = empty (nothing to find).
 Public Function PyIn(ByRef item As Variant, ByRef container As Variant) As Boolean
-Attribute PyIn.VB_Description = "Tests membership, matching Python's 'x in container'.\r\nVB6: Both item and container ByRef for array safety. Dispatch: IContains �?InStr substring �?TypeName fast paths �?iteration �?dynamic IDispatch.\r\nArgs:\r\n  item (Variant): The value to search for.\r\n  container (Variant): The container (array, string, object).\r\nReturns:\r\n  Boolean: True if item is found."
+Attribute PyIn.VB_Description = "Tests membership, matching Python's 'x in container'.\r\nVB6: Both item and container ByRef for array safety. Dispatch: IContains �?InStr substring �?TypeName fast paths �?iteration �?dynamic IDispatch.\r\nArgs:\r\n  item (Variant): The value to search for.\r\n  container (Variant): The container (array, string, object).\r\nReturns:\r\n  Boolean: True if item is found."
     PyIn = InCoreImpl.PyInCore(item, container)
 End Function
 
@@ -157,8 +157,19 @@ End Function
 ' sentinel (calls supplier until it returns sentinel). Nothing raises
 ' "'Nothing' object is not iterable".
 Public Function PyIter(ByRef value As Variant, Optional ByVal sentinel As Variant) As IIterator
-Attribute PyIter.VB_Description = "Returns an iterator for the given object, matching Python's iter().\r\nVB6: Single-arg: IIterable �?ArrayIterator �?StringIterator �?SequenceIterator �?IEnumVARIANT. Two-arg: ISupplier + sentinel. Nothing raises.\r\nArgs:\r\n  value (Variant): Iterable (array, string, IIterable, COM collection).\r\n  sentinel (Variant): Optional sentinel for callable-based iteration.\r\nReturns:\r\n  IIterator: Iterator object."
+Attribute PyIter.VB_Description = "Returns an iterator for the given object, matching Python's iter().\r\nVB6: Single-arg: IIterable �?ArrayIterator �?StringIterator �?SequenceIterator �?IEnumVARIANT. Two-arg: ISupplier + sentinel. Nothing raises.\r\nArgs:\r\n  value (Variant): Iterable (array, string, IIterable, COM collection).\r\n  sentinel (Variant): Optional sentinel for callable-based iteration.\r\nReturns:\r\n  IIterator: Iterator object."
     Set PyIter = IterCoreImpl.PyIterCore(value, sentinel)
+End Function
+
+' Python: slice([start,] stop[, step]). VB6: ByVal args (integer scalars only).
+' Returns a Slice object representing a set of indices for extended slicing.
+' One-arg form: slice(stop). Two-arg: slice(start, stop).
+' Three-arg: slice(start, stop, step). Missing args default to None.
+Public Function PySlice(Optional ByVal arg1 As Variant, _
+                        Optional ByVal arg2 As Variant, _
+                        Optional ByVal arg3 As Variant) As Slice
+Attribute PySlice.VB_Description = "Creates a Slice object matching Python's slice().\r\nVB6: One-arg: slice(stop). Two-arg: slice(start, stop). Three-arg: slice(start, stop, step).\r\nArgs:\r\n  arg1 (Variant): Stop (1-arg) or start (2-arg).\r\n  arg2 (Variant): Stop (2-arg).\r\n  arg3 (Variant): Step (3-arg, default None).\r\nReturns:\r\n  Slice: Slice object with SliceStart/SliceStop/SliceStep properties."
+    Set PySlice = SliceImpl.PySliceCore(arg1, arg2, arg3)
 End Function
 
 ' Assigns a Variant value to a Variant variable with correct AddRef semantics.
