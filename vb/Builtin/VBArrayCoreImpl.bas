@@ -35,8 +35,7 @@ Public Function PyVBArrayCore(Optional ByRef value As Variant) As VBArray
         Set vba = New VBArray
         Dim str As String: str = value
         Dim strLen As Long: strLen = Len(str)
-        Dim idx As Long
-        For idx = 1 To strLen
+        Dim idx As Long: For idx = 1 To strLen
             vba.Append Mid$(str, idx, 1)
         Next idx
         Set PyVBArrayCore = vba

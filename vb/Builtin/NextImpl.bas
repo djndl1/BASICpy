@@ -35,8 +35,7 @@ End Function
 '       ' process item
 '   Loop
 Public Function PyTryNextCore(ByRef iter As IIterator, ByRef item As Variant) As Boolean
-    Dim nextVal As Variant
-    Builtin.LetSet nextVal, iter.NextItem()
+    Dim nextVal As Variant: Builtin.LetSet nextVal, iter.NextItem()
 
     ' Guard: iterator exhausted
     If IsError(nextVal) Then

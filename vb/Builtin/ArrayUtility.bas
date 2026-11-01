@@ -9,8 +9,7 @@ Public Function ArrayResolveIndex(ByVal Index As Long, ByVal length As Long, _
                                   Optional ByVal allowAppend As Boolean = False) As Long
     If Index < 0 Then Index = length + Index
 
-    Dim max As Long
-    If allowAppend Then max = length Else max = length - 1
+    Dim max As Long: max = IIf(allowAppend, length, length - 1)
 
     If Index < 0 Or Index > max Then
         Ensure.IsTrue False, CommonHResults.SubscriptOutOfRange, _
@@ -23,8 +22,7 @@ End Function
 ' Returns the number of occurrences of value in arr(lb To lb + length - 1).
 Public Function ArrayCountOf(ByRef arr As Variant, ByVal lb As Long, _
                              ByVal length As Long, ByRef value As Variant) As Long
-    Dim i As Long
-    For i = lb To lb + length - 1
+    Dim i As Long: For i = lb To lb + length - 1
         If arr(i) = value Then ArrayCountOf = ArrayCountOf + 1
     Next i
 End Function
@@ -47,8 +45,7 @@ Public Function ArrayIndexOf(ByRef arr As Variant, ByVal lb As Long, _
     If stopAt < 0 Then stopAt = length + stopAt
     If stopAt > length Then stopAt = length
 
-    Dim i As Long
-    For i = lb + start To lb + stopAt - 1
+    Dim i As Long: For i = lb + start To lb + stopAt - 1
         If arr(i) = value Then
             ArrayIndexOf = i - lb
             Exit Function

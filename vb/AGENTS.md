@@ -22,6 +22,21 @@ This is a VB6 ActiveX DLL project (`BASICpy.vbp`) that ports Python's standard l
 
 **CRITICAL RULE**: Do not build or test this project automatically without explicit instructions from the user.
 
+## Scripts
+
+Located in `scripts/` directory:
+
+- **`fix-line-endings.sh <project-root>`** — Converts line endings of `.cls`, `.bas`, and `.vbp` files to CRLF (Windows/DOS) using `unix2dos`. Run after editing files to ensure VB6 compatibility.
+  ```bash
+  bash scripts/fix-line-endings.sh .
+  ```
+
+- **`check_decl_style.py`** — Scans VB6 source files for declaration style violations: `Dim X As Type: X = value` patterns where `X` is not used within 5 lines (indicating the declaration+initialization is too far from first use). Also checks for `Dim` statements inside control blocks (`If`/`Else`/`Select Case`/`For`/`While`).
+  ```bash
+  python3 scripts/check_decl_style.py
+  ```
+  Output lists each violating line with file path, line number, and variable name. Zero output means no violations.
+
 ## Code Style Guidelines
 
 ### Naming Conventions
@@ -35,8 +50,12 @@ This is a VB6 ActiveX DLL project (`BASICpy.vbp`) that ports Python's standard l
 - **Indentation**: 4 spaces
 - **Line Length**: Aim for 80-100 characters maximum
 - **Variable Declarations**: Use `Option Explicit` at the top of every file
-- **Inline Declaration + Assignment**: If a variable is used immediately after declaration, combine on one line with `:` (e.g., `Dim lenImpl As ILength: Set lenImpl = value`)
-- **Declare at Point of Use**: Place variable declarations near their first use, not at the procedure start. **VB6 has no block scope** — all `Dim` statements are hoisted to procedure scope regardless of where they appear. "Point of use" means placing the single declaration at procedure scope just before the first block that uses the variable. Never put `Dim` inside `If`/`Else`/`Select Case`/`For`/`While` blocks — this creates the misleading illusion of block scoping and causes duplicate declaration errors. For variables used across multiple branches, declare once at procedure scope and use `Set`/`=` assignment in each branch.
+- **Declare/Assign at Point of Use**: Place each `Dim` at procedure scope just before its first use — not grouped at the top
+  - VB6 has **no block scope**: all `Dim` statements are hoisted to procedure scope regardless of where they appear
+  - Never put `Dim` inside `If`/`Else`/`Select Case`/`For`/`While` blocks — it creates a misleading illusion of block scoping and causes duplicate-declaration errors
+  - If a variable is used across multiple branches, declare once at procedure scope and assign with `Set`/`=` in each branch
+- **Inline Declaration + Assignment**: Combine `Dim` with its first assignment on one line only when tightly coupled AND the variable is used immediately after (e.g., `Dim lenImpl As ILength: Set lenImpl = value`). If a variable is declared but assigned later (conditionally or in another branch), keep the `Dim` separate and place it close to its first actual assignment. Never declare+initialize a variable far before its first use — move both declaration and initialization to where the variable is actually read or passed
+- **Object vs value assignment**: Use `Set` for object references (e.g., `Set x = obj`), `=` for value types (e.g., `x = 42`)
 
 ### Language Features
 - **VB6 Compatibility**: Target Visual Basic 6.0 runtime

@@ -60,8 +60,7 @@ Public Function PyTupleCore(Optional ByRef value As Variant) As Variant
     
     ' Collect into a growable array using Collection as a dynamic buffer
     Dim buffer As New Collection
-    Dim item As Variant
-    Do While Builtin.PyTryNext(iter, item)
+    Dim item As Variant: Do While Builtin.PyTryNext(iter, item)
         buffer.Add item
     Loop
     
