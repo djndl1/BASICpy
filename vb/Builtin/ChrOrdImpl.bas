@@ -23,8 +23,8 @@ Public Function PyChrCore(ByVal value As Variant) As String
     ' Catch any type errors and re-raise with chr-specific context.
     On Error Resume Next
     code = Builtin.PyInt(value)
-    If Err.Number <> 0 Then
-        Dim errNum As Long: errNum = Err.Number
+    If Err.number <> 0 Then
+        Dim errNum As Long: errNum = Err.number
         Dim errDesc As String: errDesc = Err.Description
         On Error GoTo 0
         Err.Raise errNum, "Builtin.PyChr", errDesc
@@ -78,10 +78,10 @@ Public Function PyOrdCore(ByVal value As String) As Long
             "Builtin.PyOrd", "ord() expected a character, but string is empty"
         Exit Function
     End If
-
+    Dim code As Long
     ' Single UTF-16 code unit (BMP character)
     If slen = 1 Then
-        Dim code As Long: code = CLng(AscW(value))
+        code = CLng(AscW(value))
         ' AscW returns signed Integer; convert &H8000-&HFFFF to unsigned
         If code < 0 Then code = code + 65536
         PyOrdCore = code
@@ -98,7 +98,7 @@ Public Function PyOrdCore(ByVal value As String) As Long
         ' Check for valid surrogate pair: high (0xD800-0xDBFF) + low (0xDC00-0xDFFF)
         If firstCode >= &HD800 And firstCode <= &HDBFF And _
            secondCode >= &HDC00 And secondCode <= &HDFFF Then
-            Dim code As Long: code = &H10000 + ((firstCode - &HD800) * &H400) + (secondCode - &HDC00)
+            code = &H10000 + ((firstCode - &HD800) * &H400) + (secondCode - &HDC00)
             PyOrdCore = code
             Exit Function
         End If

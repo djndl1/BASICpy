@@ -23,9 +23,9 @@ Private m_step As Variant
 
 ' Initialises the Slice with start, stop, step.
 ' Each may be Empty (Python's None), a numeric value, or an IIndex object.
-Public Sub Init(ByRef start As Variant, ByRef stop As Variant, ByRef step As Variant)
+Public Sub Init(ByRef start As Variant, ByRef stopIndex As Variant, ByRef step As Variant)
     m_start = start
-    m_stop = stop
+    m_stop = stopIndex
     m_step = step
 End Sub
 
