@@ -49,10 +49,7 @@ Private Function PyMaxMinCore(ByVal source As String, ByVal emptyMsg As String, 
 
     Dim item As Variant: Dim hasItem As Boolean: hasItem = Builtin.PyTryNext(iter, item)
 
-    If Not hasItem Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, source, emptyMsg
-        Exit Function
-    End If
+    Ensure.IsTrue hasItem, CommonHResults.InvalidProcedureCall, source, emptyMsg
 
     Dim currentBest As Variant: Builtin.LetSet currentBest, item
 

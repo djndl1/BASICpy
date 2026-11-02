@@ -144,10 +144,8 @@ Public Sub Insert(ByVal Index As Long, ByRef value As Variant)
 End Sub
 
 Public Function Pop(Optional ByVal Index As Long = -1) As Variant
-    If m_len = 0 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "VBArray.Pop", "cannot pop from empty array"
-    End If
+    Ensure.IsTrue m_len <> 0, CommonHResults.InvalidProcedureCall, _
+        "VBArray.Pop", "cannot pop from empty array"
 
     Dim actual As Long: actual = ArrayResolveIndex(Index, m_len, m_lb)
     Builtin.LetSet Pop, m_data(actual)
@@ -177,10 +175,8 @@ Public Sub Remove(ByRef value As Variant)
         End If
     Next readIdx
 
-    If Not found Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "VBArray.Remove", "value not found"
-    End If
+    Ensure.IsTrue found, CommonHResults.InvalidProcedureCall, _
+        "VBArray.Remove", "value not found"
 
     m_len = writeIdx - m_lb
 End Sub
@@ -223,10 +219,8 @@ Private Function ISequence_Index(ByVal value As Variant, _
     If stopIdx > m_len Then stopIdx = m_len
     
     ISequence_Index = ArrayIndexOf(m_data, m_lb, m_len, value, startIdx, stopIdx)
-    If ISequence_Index = -1 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "VBArray.Index", "value not in sequence"
-    End If
+    Ensure.IsTrue ISequence_Index <> -1, CommonHResults.InvalidProcedureCall, _
+        "VBArray.Index", "value not in sequence"
 End Function
 
 ' ─── ILength ───

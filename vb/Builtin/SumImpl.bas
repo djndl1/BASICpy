@@ -24,11 +24,8 @@ Public Function PySumCore(ByRef value As Variant, Optional ByVal start As Varian
     Dim iter As IIterator: Set iter = Builtin.PyIter(value)
     Dim item As Variant: Do While Builtin.PyTryNext(iter, item)
         ' Guard: item must be numeric (can't sum strings)
-        If Not IsNumericValue(item) Then
-            Ensure.IsTrue False, CommonHResults.TypeMismatch, _
-                "Builtin.PySum", "unsupported operand type(s) for +: '" & TypeNameOf(item) & "' and 'int'"
-            Exit Function
-        End If
+        Ensure.IsTrue IsNumericValue(item), CommonHResults.TypeMismatch, _
+            "Builtin.PySum", "unsupported operand type(s) for +: '" & TypeNameOf(item) & "' and 'int'"
 
         total = total + item
     Loop

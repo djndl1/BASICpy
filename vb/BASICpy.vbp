@@ -62,6 +62,7 @@ Module=IntCoreImpl; Builtin\IntCoreImpl.bas
 Module=InCoreImpl; Builtin\InCoreImpl.bas
 Module=IterCoreImpl; Builtin\IterCoreImpl.bas
 Module=TupleImpl; Builtin\TupleImpl.bas
+Module=TypeUtil; Builtin\TypeUtil.bas
 Module=ArrayUtility; Builtin\ArrayUtility.bas
 Module=RtlWinApi; PInvoke\RtlWinApi.bas
 Module=NativeUtility; PInvoke\NativeUtility.bas

@@ -11,10 +11,8 @@ Public Function ArrayResolveIndex(ByVal Index As Long, ByVal length As Long, _
 
     Dim max As Long: max = IIf(allowAppend, length, length - 1)
 
-    If Index < 0 Or Index > max Then
-        Ensure.IsTrue False, CommonHResults.SubscriptOutOfRange, _
-            "ArrayResolveIndex", "index (" & Index & ") out of range"
-    End If
+    Ensure.IsTrue Index >= 0 And Index <= max, CommonHResults.SubscriptOutOfRange, _
+        "ArrayResolveIndex", "index (" & Index & ") out of range"
 
     ArrayResolveIndex = lb + Index
 End Function

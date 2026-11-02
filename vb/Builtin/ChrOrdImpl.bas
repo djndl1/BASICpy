@@ -33,11 +33,8 @@ Public Function PyChrCore(ByVal value As Variant) As String
     On Error GoTo 0
 
     ' Python allows 0 to 0x10FFFF
-    If code < 0 Or code > &H10FFFF Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyChr", "chr() argument must be in range(0x110000)"
-        Exit Function
-    End If
+    Ensure.IsTrue code >= 0 And code <= &H10FFFF, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyChr", "chr() argument must be in range(0x110000)"
 
     PyChrCore = ChrCodeToString(code)
 End Function
@@ -73,11 +70,8 @@ End Function
 Public Function PyOrdCore(ByVal value As String) As Long
     Dim slen As Long: slen = Len(value)
 
-    If slen = 0 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyOrd", "ord() expected a character, but string is empty"
-        Exit Function
-    End If
+    Ensure.IsTrue slen > 0, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyOrd", "ord() expected a character, but string is empty"
     Dim code As Long
     ' Single UTF-16 code unit (BMP character)
     If slen = 1 Then
@@ -105,6 +99,6 @@ Public Function PyOrdCore(ByVal value As String) As Long
     End If
 
     ' Any other length or invalid surrogate pair → error
-    Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-        "Builtin.PyOrd", "ord() expected a single character, but string of length " & slen & " found"
+    Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyOrd", _
+        "ord() expected a single character, but string of length " & slen & " found"
 End Function

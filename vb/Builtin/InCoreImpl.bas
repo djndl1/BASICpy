@@ -22,10 +22,8 @@ Public Function PyInCore(ByRef item As Variant, ByRef container As Variant) As B
 
     ' 1b. String container → substring matching (Python: y.find(x) != -1)
     If VarType(container) = vbString Then
-        If VarType(item) <> vbString Then
-            Ensure.IsTrue False, CommonHResults.TypeMismatch, _
-                "Builtin.PyIn", "'in <string>' requires string as left operand"
-        End If
+        Ensure.IsTrue VarType(item) = vbString, CommonHResults.TypeMismatch, _
+            "Builtin.PyIn", "'in <string>' requires string as left operand"
         PyInCore = (InStr(1, container, item, vbBinaryCompare) > 0)
         Exit Function
     End If

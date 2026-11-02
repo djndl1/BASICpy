@@ -8,18 +8,14 @@ Public Function PyBinCore(ByVal value As Variant) As String
             Case vbByte, vbInteger, vbLong
                 PyBinCore = LongToBinStr(CLng(value))
             Case Else
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyBin", "argument must be an integer"
+                Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyBin", "argument must be an integer"
         End Select
         Exit Function
     End If
 
     ' Guard: object must implement IIndex
-    If Not TypeOf value Is IIndex Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyBin", "object does not implement IIndex"
-        Exit Function
-    End If
+    Ensure.IsTrue TypeOf value Is IIndex, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyBin", "object does not implement IIndex"
 
     Dim indexImpl As IIndex: Set indexImpl = value
     PyBinCore = LongToBinStr(indexImpl.Index())
@@ -33,18 +29,14 @@ Public Function PyOctCore(ByVal value As Variant) As String
             Case vbByte, vbInteger, vbLong
                 PyOctCore = LongToOctStr(CLng(value))
             Case Else
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyOct", "argument must be an integer"
+                Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyOct", "argument must be an integer"
         End Select
         Exit Function
     End If
 
     ' Guard: object must implement IIndex
-    If Not TypeOf value Is IIndex Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyOct", "object does not implement IIndex"
-        Exit Function
-    End If
+    Ensure.IsTrue TypeOf value Is IIndex, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyOct", "object does not implement IIndex"
 
     Dim indexImpl As IIndex: Set indexImpl = value
     PyOctCore = LongToOctStr(indexImpl.Index())
@@ -58,18 +50,14 @@ Public Function PyHexCore(ByVal value As Variant) As String
             Case vbByte, vbInteger, vbLong
                 PyHexCore = LongToHexStr(CLng(value))
             Case Else
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyHex", "argument must be an integer"
+                Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyHex", "argument must be an integer"
         End Select
         Exit Function
     End If
 
     ' Guard: object must implement IIndex
-    If Not TypeOf value Is IIndex Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyHex", "object does not implement IIndex"
-        Exit Function
-    End If
+    Ensure.IsTrue TypeOf value Is IIndex, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyHex", "object does not implement IIndex"
 
     Dim indexImpl As IIndex: Set indexImpl = value
     PyHexCore = LongToHexStr(indexImpl.Index())

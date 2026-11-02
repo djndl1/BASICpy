@@ -5,28 +5,22 @@ Option Explicit
 Public Function PyIterCore(ByRef value As Variant, Optional ByVal sentinel As Variant) As IIterator
     ' Guard: Nothing is not iterable
     If IsObject(value) Then
-        If value Is Nothing Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.PyIter", "'Nothing' object is not iterable"
-            Exit Function
-        End If
+        Ensure.IsTrue Not value Is Nothing, CommonHResults.InvalidProcedureCall, _
+            "Builtin.PyIter", "'Nothing' object is not iterable"
+        Exit Function
     End If
 
     ' Guard: two-arg form (callable + sentinel)
     If Not IsMissing(sentinel) Then
         ' Guard: must be an object (callable)
-        If Not IsObject(value) Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.PyIter", "argument is not a callable (ISupplier required)"
-            Exit Function
-        End If
+        Ensure.IsTrue IsObject(value), CommonHResults.InvalidProcedureCall, _
+            "Builtin.PyIter", "argument is not a callable (ISupplier required)"
+        Exit Function
 
         ' Guard: must implement ISupplier
-        If Not TypeOf value Is ISupplier Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.PyIter", "object does not implement ISupplier"
-            Exit Function
-        End If
+        Ensure.IsTrue TypeOf value Is ISupplier, CommonHResults.InvalidProcedureCall, _
+            "Builtin.PyIter", "object does not implement ISupplier"
+        Exit Function
 
         ' Happy path: create supplier iterator
         Dim supplier As ISupplier: Set supplier = value
@@ -54,8 +48,7 @@ Public Function PyIterCore(ByRef value As Variant, Optional ByVal sentinel As Va
     End If
 
     ' Error: not iterable
-    Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-        "Builtin.PyIter", "argument is not iterable"
+    Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyIter", "argument is not iterable"
 End Function
 
 ' Creates an IIterator for a value using fallback strategies:

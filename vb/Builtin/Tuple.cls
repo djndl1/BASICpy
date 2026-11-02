@@ -77,10 +77,8 @@ Public Function Index(ByVal value As Variant, _
     If stopIdx > m_length Then stopIdx = m_length
 
     Index = ArrayIndexOf(m_data, m_lb, m_length, value, startIdx, stopIdx)
-    If Index = -1 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Tuple.Index", "value not in sequence"
-    End If
+    Ensure.IsTrue Index <> -1, CommonHResults.InvalidProcedureCall, _
+        "Tuple.Index", "value not in sequence"
 End Function
 
 ' Default Item property — enables tupleObj(index) syntax.

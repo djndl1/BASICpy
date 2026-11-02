@@ -90,10 +90,8 @@ End Function
 
 ' Returns the index of value in the range, or raises if not present.
 Public Function Index(ByVal value As Long) As Long
-    If Not Contains(value) Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "RangeIterator.Index", "value not in range"
-    End If
+    Ensure.IsTrue Contains(value), CommonHResults.InvalidProcedureCall, _
+        "RangeIterator.Index", "value not in range"
     Index = (value - m_start) \ m_step
 End Function
 
@@ -123,10 +121,8 @@ Private Function ISequence_GetItem(ByVal Index As Long) As Variant
         actualIndex = m_length + actualIndex
     End If
 
-    If actualIndex < 0 Or actualIndex >= m_length Then
-        Ensure.IsTrue False, CommonHResults.SubscriptOutOfRange, _
-            "RangeIterator.GetItem", "index out of range"
-    End If
+    Ensure.IsTrue actualIndex >= 0 And actualIndex < m_length, CommonHResults.SubscriptOutOfRange, _
+        "RangeIterator.GetItem", "index out of range"
 
     ISequence_GetItem = m_start + m_step * actualIndex
 End Function
@@ -168,18 +164,14 @@ Private Function ISequence_Index(ByVal value As Variant, _
     End If
 
     ' Range can compute index mathematically (O(1) when unbounded)
-    If Not IContains_Contains(value) Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "RangeIterator.Index", "value not in sequence"
-    End If
+    Ensure.IsTrue IContains_Contains(value), CommonHResults.InvalidProcedureCall, _
+        "RangeIterator.Index", "value not in sequence"
 
     Dim rawIndex As Long
     rawIndex = (CLng(value) - m_start) \ m_step
 
-    If rawIndex < startIdx Or rawIndex >= stopIdx Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "RangeIterator.Index", "value not in sequence"
-    End If
+    Ensure.IsTrue rawIndex >= startIdx And rawIndex < stopIdx, CommonHResults.InvalidProcedureCall, _
+        "RangeIterator.Index", "value not in sequence"
 
     ISequence_Index = rawIndex
 End Function

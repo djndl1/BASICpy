@@ -99,6 +99,29 @@ ErrorHandler:
 End Sub
 ```
 
+#### Ensure vs Err.Raise
+
+**`Ensure.IsTrue condition, errCode, source, msg`** — Validate a precondition; raises automatically when `condition` is `False`.
+
+```vb
+Ensure.IsTrue divisor <> 0, ErrorCodes.DivisionByZero, "Method", "divisor cannot be zero"
+```
+
+**`Err.Raise errCode, source, description`** — Raise unconditionally when no boolean condition exists (e.g., wrapping a VB6 runtime error).
+
+**Never write `Ensure.IsTrue False, ...`** — use `Err.Raise` directly instead.
+
+```vb
+' Wrong: Ensure.IsTrue(False) is semantically meaningless
+If b = 0 Then Ensure.IsTrue False, ErrorCodes.DivisionByZero, "Method", "divisor cannot be zero": Exit Function
+
+' Right: pass an actual condition
+Ensure.IsTrue b <> 0, ErrorCodes.DivisionByZero, "Method", "divisor cannot be zero"
+
+' Right: Err.Raise when no condition exists
+Err.Raise ErrorCodes.DivisionByZero, "Method", "divisor cannot be zero"
+```
+
 #### Comments
 - Use single quote comments for explanations
 - Document Python analog where behavior matches: `' Matches Python's bool(value)`

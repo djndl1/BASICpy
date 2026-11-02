@@ -4,10 +4,8 @@ Option Explicit
 ' Core implementation: returns the length of a value. Raises if the value has no len().
 Public Function PyLenCore(ByRef value As Variant) As Long
     PyLenCore = PyLenImpl(value)
-    If PyLenCore = -1 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyLen", "argument has no len()"
-    End If
+    Ensure.IsTrue PyLenCore <> -1, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyLen", "argument has no len()"
 End Function
 
 ' Safe internal length — returns -1 on failure instead of raising.

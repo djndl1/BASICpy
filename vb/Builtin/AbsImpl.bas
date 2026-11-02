@@ -9,11 +9,8 @@ Public Function PyAbsCore(ByVal value As Variant) As Variant
     End If
 
     ' Guard: objects must implement IAbsolute
-    If Not TypeOf value Is IAbsolute Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.PyAbs", "object does not implement IAbsolute"
-        Exit Function
-    End If
+    Ensure.IsTrue TypeOf value Is IAbsolute, CommonHResults.InvalidProcedureCall, _
+        "Builtin.PyAbs", "object does not implement IAbsolute"
 
     ' Object implementing IAbsolute
     Dim absImpl As IAbsolute: Set absImpl = value

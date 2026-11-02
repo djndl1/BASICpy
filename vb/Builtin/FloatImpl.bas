@@ -28,8 +28,8 @@ Public Function PyFloatCore(Optional ByVal value As Variant) As Double
             PyFloatCore = 0#
 
         Case vbNull
-            Ensure.IsTrue False, CommonHResults.TypeMismatch, _
-                "Builtin.PyFloat", "float() argument must be a string or a number, not 'NoneType'"
+            Err.Raise CommonHResults.TypeMismatch, "Builtin.PyFloat", _
+                "float() argument must be a string or a number, not 'NoneType'"
 
         Case vbBoolean
             If value Then
@@ -47,16 +47,13 @@ Public Function PyFloatCore(Optional ByVal value As Variant) As Double
         Case vbString
             ' Parse string as float (VB6's CDbl handles leading/trailing whitespace)
             Dim s As String: s = Trim$(value)
-            If Len(s) = 0 Then
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyFloat", "could not convert string to float: empty string"
-                Exit Function
-            End If
+            Ensure.IsTrue Len(s) > 0, CommonHResults.InvalidProcedureCall, _
+                "Builtin.PyFloat", "could not convert string to float: empty string"
             On Error Resume Next
             PyFloatCore = CDbl(s)
             If Err.Number <> 0 Then
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyFloat", "could not convert string to float: '" & s & "'"
+                Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyFloat", _
+                    "could not convert string to float: '" & s & "'"
                 On Error GoTo 0
                 Exit Function
             End If
@@ -72,12 +69,12 @@ Public Function PyFloatCore(Optional ByVal value As Variant) As Double
                 Dim idx As IIndex: Set idx = value
                 PyFloatCore = CDbl(Builtin.PyInt(value))
             Else
-                Ensure.IsTrue False, CommonHResults.TypeMismatch, _
-                    "Builtin.PyFloat", "float() argument must be a string or a number, not '" & TypeName(value) & "'"
+                Err.Raise CommonHResults.TypeMismatch, "Builtin.PyFloat", _
+                    "float() argument must be a string or a number, not '" & TypeName(value) & "'"
             End If
 
         Case Else
-            Ensure.IsTrue False, CommonHResults.TypeMismatch, _
-                "Builtin.PyFloat", "float() argument must be a string or a number"
+            Err.Raise CommonHResults.TypeMismatch, "Builtin.PyFloat", _
+                "float() argument must be a string or a number"
     End Select
 End Function

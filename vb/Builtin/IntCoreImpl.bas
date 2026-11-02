@@ -3,38 +3,40 @@ Option Explicit
 
 ' Core implementation for PyInt — returns an integer matching Python's int().
 Public Function PyIntCore(Optional ByVal value As Variant, Optional ByVal base As Variant) As Long
-    If IsArray(value) Then
-        Ensure.IsTrue False, CommonHResults.TypeMismatch, _
-            "Builtin.PyInt", "argument must be a number or string, not an array"
-
-    ElseIf IsMissing(value) Then
+    If IsMissing(value) Then
         PyIntCore = 0
+        Exit Function
+    End If
 
-    ElseIf Not IsMissing(base) Then
+    Ensure.IsTrue Not IsArray(value), CommonHResults.TypeMismatch, _
+        "Builtin.PyInt", "argument must be a number or string, not an array"
+
+    If Not IsMissing(base) Then
         PyIntCore = ParseIntString(CStr(value), AsIntegerIndex(base))
+        Exit Function
+    End If
 
-    ElseIf IsObject(value) Then
+    If IsObject(value) Then
         If TypeOf value Is IIndex Then
             Dim idx As IIndex: Set idx = value
             PyIntCore = Builtin.PyInt(idx.Index())
-        Else
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.PyInt", "object does not implement IIndex"
+            Exit Function
         End If
-
-    Else
-        Select Case VarType(value)
-            Case vbByte, vbInteger, vbLong
-                PyIntCore = value
-            Case vbSingle, vbDouble, vbCurrency, vbDecimal
-                PyIntCore = Fix(value)
-            Case vbString
-                PyIntCore = ParseIntString(value, 10)
-            Case Else
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyInt", "argument must be a number or string"
-        End Select
+        Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyInt", _
+            "object does not implement IIndex"
     End If
+
+    Select Case VarType(value)
+        Case vbByte, vbInteger, vbLong
+            PyIntCore = value
+        Case vbSingle, vbDouble, vbCurrency, vbDecimal
+            PyIntCore = Fix(value)
+        Case vbString
+            PyIntCore = ParseIntString(value, 10)
+        Case Else
+            Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyInt", _
+                "argument must be a number or string"
+    End Select
 End Function
 
 ' Validates and converts a value to a Long integer index.
@@ -49,8 +51,8 @@ Public Function AsIntegerIndex(ByVal value As Variant) As Long
             Case vbByte, vbInteger, vbLong
                 AsIntegerIndex = CLng(value)
             Case Else
-                Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                    "Builtin.PyRange", "argument must be an integer"
+                Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.PyRange", _
+                    "argument must be an integer"
         End Select
     End If
 End Function
@@ -78,8 +80,7 @@ Public Function ParseIntString(ByVal s As String, ByVal base As Long) As Long
     s = Trim(s)
 
     If Len(s) = 0 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.ParseIntString", "empty string"
+        Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.ParseIntString", "empty string"
     End If
 
     Dim pos As Long: pos = 1
@@ -108,8 +109,7 @@ Public Function ParseIntString(ByVal s As String, ByVal base As Long) As Long
     If base = 0 And actualBase = 0 Then actualBase = 10
 
     If actualBase < 2 Or actualBase > 36 Then
-        Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-            "Builtin.ParseIntString", "invalid base"
+        Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.ParseIntString", "invalid base"
     End If
 
     ' Parse digits using Double for intermediate storage (handles Long.MinValue)
@@ -123,29 +123,26 @@ Public Function ParseIntString(ByVal s As String, ByVal base As Long) As Long
 
         digitVal = CharToDigit(c)
         If digitVal < 0 Or digitVal >= actualBase Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.ParseIntString", "invalid digit for base " & CStr(actualBase)
+            Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.ParseIntString", _
+                "invalid digit for base " & CStr(actualBase)
         End If
 
         accum = accum * actualBase + digitVal
 
         ' Fast overflow detection
         If accum > 2147483648# Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.ParseIntString", "integer overflow"
+            Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.ParseIntString", "integer overflow"
         End If
     Loop
 
     If negative Then
         If accum > 2147483648# Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.ParseIntString", "integer overflow"
+            Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.ParseIntString", "integer overflow"
         End If
         ParseIntString = CLng(-accum)
     Else
         If accum > 2147483647# Then
-            Ensure.IsTrue False, CommonHResults.InvalidProcedureCall, _
-                "Builtin.ParseIntString", "integer overflow"
+            Err.Raise CommonHResults.InvalidProcedureCall, "Builtin.ParseIntString", "integer overflow"
         End If
         ParseIntString = CLng(accum)
     End If
