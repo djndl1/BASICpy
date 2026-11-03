@@ -23,3 +23,14 @@ Public Function IsIntegerValue(ByVal v As Variant) As Boolean
             IsIntegerValue = False
     End Select
 End Function
+
+' Returns True if the VarType is a strict integer type (Byte/Integer/Long/Boolean).
+' Unlike IsIntegerValue, this does not consider whole-number floats as integers.
+Public Function IsStrictIntegerType(ByVal vt As VbVarType) As Boolean
+    Select Case vt
+        Case vbByte, vbInteger, vbLong, vbBoolean
+            IsStrictIntegerType = True
+        Case Else
+            IsStrictIntegerType = False
+    End Select
+End Function

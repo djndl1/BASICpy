@@ -172,6 +172,89 @@ Attribute PySlice.VB_Description = "Creates a Slice object matching Python's sli
     Set PySlice = SliceImpl.PySliceCore(arg1, arg2, arg3)
 End Function
 
+' Python: str([value]). VB6: Optional ByVal allows no-arg call → ''.
+' Converts a value to its string representation.
+Public Function PyStr(Optional ByVal value As Variant) As Variant
+Attribute PyStr.VB_Description = "Returns a string representation of a value, matching Python's str().\r\nVB6: No argument returns empty string.\r\nArgs:\r\n  value (Variant): Value to convert (optional).\r\nReturns:\r\n  Variant: String representation."
+    PyStr = StrImpl.PyStrCore(value)
+End Function
+
+' Python: float([value]). VB6: Optional ByVal allows no-arg call → 0.0.
+' Converts a value to a floating-point number.
+Public Function PyFloat(Optional ByVal value As Variant) As Double
+Attribute PyFloat.VB_Description = "Returns a floating-point number, matching Python's float().\r\nVB6: No argument returns 0.0.\r\nArgs:\r\n  value (Variant): Number or string to convert (optional).\r\nReturns:\r\n  Double: Floating-point value."
+    PyFloat = floatImpl.PyFloatCore(value)
+End Function
+
+' Python: chr(i). VB6: ByVal because only integer scalars accepted.
+' Returns the character for an integer code point.
+Public Function PyChr(ByVal value As Variant) As String
+Attribute PyChr.VB_Description = "Returns the character for an integer code point, matching Python's chr().\r\nVB6: Uses ChrW$() for UTF-16. Range 0-0x10FFFF; supplementary chars (0x10000+) returned as surrogate pairs.\r\nArgs:\r\n  value (Variant): Integer code point.\r\nReturns:\r\n  Variant: String (1 char for BMP, 2 UTF-16 units for supplementary)."
+    PyChr = ChrOrdImpl.PyChrCore(value)
+End Function
+
+' Python: ord(c). VB6: ByVal because only string scalars accepted.
+' Returns the integer code point of a character.
+Public Function PyOrd(ByVal value As Variant) As Long
+Attribute PyOrd.VB_Description = "Returns the integer code point of a character, matching Python's ord().\r\nVB6: Uses AscW() for UTF-16. Accepts single BMP char or surrogate pair (2 code units = 1 supplementary char).\r\nArgs:\r\n  value (Variant): A single character string (or surrogate pair).\r\nReturns:\r\n  Variant: Integer code point (0-0x10FFFF)."
+    ' Guard: must be a string — PyOrdCore takes String, so coerce-check here
+    ' to preserve Python semantics (ord(42) raises TypeError, not ord("42"))
+    Ensure.IsTrue VarType(value) = vbString, CommonHResults.TypeMismatch, _
+        "Builtin.PyOrd", "ord() expected a string"
+
+    PyOrd = ChrOrdImpl.PyOrdCore(value)
+End Function
+
+' Python: max(iterable[, key]). VB6: ByRef for iterable safety.
+' Returns the largest item. Single iterable argument only (VB6 has no variadic).
+' Optional key function for custom ordering (Python's key parameter for max/min).
+Public Function PyMax(ByRef value As Variant, Optional ByVal key As IFunction) As Variant
+Attribute PyMax.VB_Description = "Returns the largest item in an iterable, matching Python's max().\r\nVB6: Single iterable argument. Optional key function for custom ordering.\r\nArgs:\r\n  value (Variant): Iterable (array, string, IIterable, COM collection).\r\n  key (IFunction): Optional key function for custom ordering.\r\nReturns:\r\n  Variant: Largest item."
+    Builtin.LetSet PyMax, MaxMinImpl.PyMaxCore(value, key)
+End Function
+
+' Python: min(iterable[, key]). VB6: ByRef for iterable safety.
+' Returns the smallest item. Single iterable argument only.
+' Optional key function for custom ordering.
+Public Function PyMin(ByRef value As Variant, Optional ByVal key As IFunction) As Variant
+Attribute PyMin.VB_Description = "Returns the smallest item in an iterable, matching Python's min().\r\nVB6: Single iterable argument. Optional key function for custom ordering.\r\nArgs:\r\n  value (Variant): Iterable (array, string, IIterable, COM collection).\r\n  key (IFunction): Optional key function for custom ordering.\r\nReturns:\r\n  Variant: Smallest item."
+    Builtin.LetSet PyMin, MaxMinImpl.PyMinCore(value, key)
+End Function
+
+' Python: sum(iterable[, start]). VB6: ByRef for iterable safety.
+' Returns the sum of an iterable of numbers.
+Public Function PySum(ByRef value As Variant, Optional ByVal start As Variant) As Variant
+Attribute PySum.VB_Description = "Returns the sum of an iterable of numbers, matching Python's sum().\r\nVB6: All items must be numeric.\r\nArgs:\r\n  value (Variant): Iterable of numbers.\r\n  start (Variant): Optional starting value (default 0).\r\nReturns:\r\n  Variant: Sum."
+    PySum = SumImpl.PySumCore(value, start)
+End Function
+
+' Python: pow(base, exp[, mod]). VB6: ByVal args (numeric scalars only).
+' Returns base raised to the power exp, optionally modulo mod.
+Public Function PyPow(ByVal base As Variant, ByVal exp As Variant, Optional ByVal modulo As Variant) As Variant
+    PyPow = PowImpl.PyPowCore(base, exp, modulo)
+End Function
+
+' Python: round(number[, ndigits]). VB6: ByVal number, Optional ByVal ndigits.
+' Rounds a number to ndigits decimal places using banker's rounding.
+Public Function PyRound(ByVal number As Variant, Optional ByVal ndigits As Variant) As Variant
+Attribute PyRound.VB_Description = "Rounds a number to ndigits decimal places, matching Python's round().\r\nVB6: Uses banker's rounding (round half to even).\r\nArgs:\r\n  number (Variant): Number to round.\r\n  ndigits (Variant): Optional number of decimal places.\r\nReturns:\r\n  Variant: Rounded number."
+    PyRound = RoundImpl.PyRoundCore(number, ndigits)
+End Function
+
+' Python: divmod(a, b). VB6: ByVal args (numeric scalars only).
+' Returns quotient and remainder as a 2-element array.
+Public Function PyDivMod(ByVal a As Variant, ByVal b As Variant) As Variant
+Attribute PyDivMod.VB_Description = "Returns quotient and remainder, matching Python's divmod().\r\nVB6: Returns a 2-element Variant array (quotient, remainder).\r\nArgs:\r\n  a (Variant): Dividend.\r\n  b (Variant): Divisor.\r\nReturns:\r\n  Variant: 2-element array (quotient, remainder)."
+    PyDivMod = DivModImpl.PyDivModCore(a, b)
+End Function
+
+' Python: repr([value]). VB6: Optional ByVal allows no-arg call → 'None'.
+' Returns a string representation of a value.
+Public Function PyRepr(Optional ByVal value As Variant) As String
+Attribute PyRepr.VB_Description = "Returns a string representation of a value, matching Python's repr().\r\nVB6: Differentiates Nothing, Empty, Null, Missing. Strings use Python-style quoting.\r\nArgs:\r\n  value (Variant): Value to represent (optional).\r\nReturns:\r\n  String: String representation."
+    PyRepr = reprImpl.PyReprCore(value)
+End Function
+
 ' Assigns a Variant value to a Variant variable with correct AddRef semantics.
 ' VB6's Let (=) doesn't call AddRef on object references; Set calls AddRef
 ' but throws on value types. This helper dispatches correctly for both.
